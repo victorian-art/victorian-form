@@ -99,7 +99,7 @@
 <form id="orderForm" oninput="calculateTotal()">
 <label for="name">اسم العميل:</label>
 <input id="name" placeholder="أدخل اسمك" required="" type="text"/>
-<label for="chair">كرسي (350 درهم):</label>
+<label for="chair">كرسي (650 درهم):</label>
 <input id="chair" min="0" type="number" value="0"/><img src="https://i.postimg.cc/3JdqRvCj/2025-02-24-161248.png" style="width: 100%; max-width: 300px; display: block; margin-bottom: 20px;"/>
 <label for="sofa">صوفا (450 درهم):</label>
 <input id="sofa" min="0" type="number" value="0"/><img src="https://vhome.ae/wp-content/uploads/2025/04/3fc798a3-40f7-4295-ad7e-c38225fd4d1a.png" style="width: 100%; max-width: 300px; display: block; margin-bottom: 20px;"/>
@@ -121,7 +121,7 @@
       const tableQty = parseInt(document.getElementById('table').value) || 0;
       const curtainQty = parseInt(document.getElementById('curtain').value) || 0;
 
-      const total = (chairQty * 350) + (curtainQty * 750) + (sofaQty * 450) + (tableQty * 550);
+      const total = (chairQty * 650) + (curtainQty * 750) + (sofaQty * 450) + (tableQty * 550);
       document.getElementById('total').textContent = total;
     }
 
@@ -132,7 +132,7 @@
       const tableQty = parseInt(document.getElementById('table').value) || 0;
       const curtainQty = parseInt(document.getElementById('curtain').value) || 0;
 
-      const totalChair = chairQty * 350;
+      const totalChair = chairQty * 650;
       const totalSofa = sofaQty * 450;
       const totalTable = tableQty * 550;
       const totalCurtain = curtainQty * 750;
@@ -141,7 +141,7 @@
       const message = `🛒 *طلب جديد*\n` +
                       `👤 الاسم: ${name}\n` +
                       `-----------------------------\n` +
-                      `كرسي: ${chairQty} × 350 = ${totalChair} درهم\n` +
+                      `كرسي: ${chairQty} × 650 = ${totalChair} درهم\n` +
                       `صوفا: ${sofaQty} × 450 = ${totalSofa} درهم\n` +
                       `طاولة: ${tableQty} × 550 = ${totalTable} درهم\n` +
                       `ستارة: ${curtainQty} × 750 = ${totalCurtain} درهم\n` +
