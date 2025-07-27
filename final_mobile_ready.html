@@ -1,156 +1,116 @@
 <!DOCTYPE html>
-
 <html lang="ar">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<style>
-  @media screen and (max-width: 600px) {
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>نموذج الطلب</title>
+  <style>
     body {
-      padding: 10px;
+      font-family: Arial, sans-serif;
+      direction: rtl;
+      padding: 15px;
+      background-color: #f9f9f9;
     }
-    .section {
-      padding: 20px 15px;
-      margin: 10px auto;
+    .product {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: white;
+    }
+    .product img {
+      max-width: 100%;
+      height: auto;
     }
     input[type="number"], input[type="text"] {
-      font-size: 14px;
+      width: 100%;
+      margin-top: 5px;
+      margin-bottom: 10px;
       padding: 8px;
-    }
-    button {
-      font-size: 16px;
-      padding: 10px 15px;
     }
     .total {
       font-size: 20px;
-    }
-  }
-</style>
-
-<title>طلب منتجات - Victorian Art</title>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&amp;display=swap" rel="stylesheet"/>
-<style>
-    body {
-      font-family: 'Tajawal', sans-serif;
-      direction: rtl;
-      padding: 0;
-      margin: 0;
-      background-color: #111111;
-      color: #fff;
-    }
-    .header {
-      text-align: center;
-      padding: 30px 20px 10px;
-    }
-    .header img {
-      max-width: 220px;
-      margin-bottom: 10px;
-    }
-    .section {
-      background: #1e1e1e;
-      padding: 30px 20px;
-      border-radius: 15px;
-      max-width: 600px;
-      margin: 20px auto;
-      box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
       font-weight: bold;
-      color: #f3c144;
-    }
-    input[type="number"], input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-    .total {
-      font-size: 22px;
-      font-weight: bold;
-      margin-top: 20px;
-      color: #f3c144;
+      margin-top: 15px;
     }
     button {
-      padding: 12px 20px;
-      background-color: #25D366;
+      background-color: #25d366;
       color: white;
+      padding: 12px;
       border: none;
-      border-radius: 8px;
+      width: 100%;
       font-size: 18px;
       cursor: pointer;
-      width: 100%;
-    }
-    button:hover {
-      background-color: #1ebe57;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-<div class="header">
-<img alt="Victorian Art Logo" src="https://i.postimg.cc/L4QwkTxg/LOGO23333.png"/>
-</div>
-<div class="section">
-<h2 style="text-align:center; color:#f3c144;">نموذج اختيار المنتجات</h2>
-<form id="orderForm" oninput="calculateTotal()">
-<label for="name">اسم العميل:</label>
-<input id="name" placeholder="أدخل اسمك" required="" type="text"/>
-<label for="chair">كرسي (650 درهم):</label>
-<input id="chair" min="0" type="number" value="0"/><img src="https://i.postimg.cc/3JdqRvCj/2025-02-24-161248.png" style="width: 100%; max-width: 300px; display: block; margin-bottom: 20px;"/>
-<label for="sofa">صوفا (450 درهم):</label>
-<input id="sofa" min="0" type="number" value="0"/><img src="https://vhome.ae/wp-content/uploads/2025/04/3fc798a3-40f7-4295-ad7e-c38225fd4d1a.png" style="width: 100%; max-width: 300px; display: block; margin-bottom: 20px;"/>
-<label for="table">طاولة (550 درهم):</label>
-<input id="table" min="0" type="number" value="0"/><img src="https://vhome.ae/wp-content/uploads/2025/04/5c376a86-a0fc-4c90-a1c1-5c6938b84d41.png" style="width: 100%; max-width: 300px; display: block; margin-bottom: 20px;"/>
-<label for="table">ستارة (750 درهم):</label>
-<input id="curtain" min="0" type="number" value="0"/><img src="https://vhome.ae/wp-content/uploads/2025/05/ChatGPT-Image-May-13-2025-04_16_32-PM.png" style="width: 100%; max-width: 300px; display: block; margin-bottom: 20px;"/>
+  <h2>نموذج طلب المنتجات</h2>
+  <div id="productContainer"></div>
 
-<div class="total">الإجمالي: <span id="total">0</span> درهم</div>
-
-<button onclick="sendToWhatsApp()" type="button">إرسال الطلب عبر واتساب</button>
-</form>
-</div>
+  <input type="text" id="clientName" placeholder="الاسم الكامل" required />
+  <div class="total">المجموع: <span id="totalPrice">0</span> درهم</div>
+  <button onclick="sendWhatsAppOrder()">إرسال الطلب عبر واتساب</button>
 
   <script>
-    function calculateTotal() {
-      const chairQty = parseInt(document.getElementById('chair').value) || 0;
-      const sofaQty = parseInt(document.getElementById('sofa').value) || 0;
-      const tableQty = parseInt(document.getElementById('table').value) || 0;
-      const curtainQty = parseInt(document.getElementById('curtain').value) || 0;
+    const sheetUrl = 'https://script.google.com/macros/s/AKfycbz8EqHU6ICr-BQfludqtBdSQ1vanr0g8QJ7hSVFUtiODFW7Sb1DNrV7HubYmmeBI4JgLQ/exec';
+    const productContainer = document.getElementById("productContainer");
+    const totalPriceElement = document.getElementById("totalPrice");
 
-      const total = (chairQty * 650) + (curtainQty * 750) + (sofaQty * 450) + (tableQty * 550);
-      document.getElementById('total').textContent = total;
+    let products = [];
+
+    fetch(sheetUrl)
+      .then(response => response.json())
+      .then(data => {
+        products = data.products;
+        products.forEach((product, index) => {
+          const div = document.createElement("div");
+          div.className = "product";
+          div.innerHTML = `
+            <h3>${product.name} - ${product.price} درهم</h3>
+            <img src="${product.image}" alt="${product.name}" />
+            <label>الكمية:</label>
+            <input type="number" min="0" value="0" onchange="calculateTotal()" id="qty-${index}" />
+          `;
+          productContainer.appendChild(div);
+        });
+      })
+      .catch(error => {
+        productContainer.innerHTML = "<p>حدث خطأ أثناء تحميل المنتجات.</p>";
+        console.error("خطأ:", error);
+      });
+
+    function calculateTotal() {
+      let total = 0;
+      products.forEach((product, index) => {
+        const qty = parseInt(document.getElementById(`qty-${index}`).value) || 0;
+        total += qty * parseFloat(product.price);
+      });
+      totalPriceElement.textContent = total.toFixed(2);
     }
 
-    function sendToWhatsApp() {
-      const name = document.getElementById('name').value.trim();
-      const chairQty = parseInt(document.getElementById('chair').value) || 0;
-      const sofaQty = parseInt(document.getElementById('sofa').value) || 0;
-      const tableQty = parseInt(document.getElementById('table').value) || 0;
-      const curtainQty = parseInt(document.getElementById('curtain').value) || 0;
+    function sendWhatsAppOrder() {
+      const name = document.getElementById("clientName").value.trim();
+      if (!name) {
+        alert("يرجى إدخال الاسم الكامل.");
+        return;
+      }
 
-      const totalChair = chairQty * 650;
-      const totalSofa = sofaQty * 450;
-      const totalTable = tableQty * 550;
-      const totalCurtain = curtainQty * 750;
-      const total = totalChair + totalCurtain + totalSofa + totalTable;
+      let message = `طلب جديد من: ${name}%0A--------------------%0A`;
+      let total = 0;
 
-      const message = `🛒 *طلب جديد*\n` +
-                      `👤 الاسم: ${name}\n` +
-                      `-----------------------------\n` +
-                      `كرسي: ${chairQty} × 650 = ${totalChair} درهم\n` +
-                      `صوفا: ${sofaQty} × 450 = ${totalSofa} درهم\n` +
-                      `طاولة: ${tableQty} × 550 = ${totalTable} درهم\n` +
-                      `ستارة: ${curtainQty} × 750 = ${totalCurtain} درهم\n` +
-                      `-----------------------------\n` +
-                      `💰 *الإجمالي:* ${total} درهم`;
+      products.forEach((product, index) => {
+        const qty = parseInt(document.getElementById(`qty-${index}`).value) || 0;
+        if (qty > 0) {
+          const subtotal = qty * parseFloat(product.price);
+          total += subtotal;
+          message += `${product.name}: ${qty} × ${product.price} = ${subtotal} درهم%0A`;
+        }
+      });
 
-      const phone = "971504133032";
-      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-      window.open(url, '_blank');
+      message += `--------------------%0Aالمجموع: ${total.toFixed(2)} درهم`;
+      const whatsappUrl = `https://wa.me/971504133032?text=${message}`;
+      window.open(whatsappUrl, '_blank');
     }
   </script>
 </body>
