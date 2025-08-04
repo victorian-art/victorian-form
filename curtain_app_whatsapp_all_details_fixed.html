@@ -1,0 +1,425 @@
+
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<title>تطبيق ستائر متعدد - Victorian Art</title>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+    body { font-family: 'Amiri', serif; background: #f7f7f7; padding: 20px; margin: 0; }
+    .container { background: white; padding: 20px; border-radius: 15px; max-width: 700px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h2, h3 { text-align: center; margin-top: 0; }
+    label { margin-top: 10px; display: block; font-weight: bold; }
+    input, select, textarea {
+      width: 100%; padding: 8px; margin-top: 5px;
+      border-radius: 6px; border: 1px solid #ccc;
+    }
+    .btn, .btns button {
+      padding: 10px 20px; border: none; border-radius: 6px;
+      background-color: #b58e00; color: white; cursor: pointer;
+      margin-top: 15px;
+    }
+    .btn:hover, .btns button:hover { background-color: #8e6c00; }
+    .hidden { display: none; }
+    .price-output { margin-top: 10px; font-weight: bold; color: #333; }
+    #totalBox {
+      background: #f1f1f1; padding: 15px; margin-top: 20px;
+      border-radius: 10px; font-size: 18px;
+    }
+    .curtain-summary { border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px; }
+    img.preview-img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+  </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script></head>
+<body>
+<div class="container" id="page-client">
+<h2>بيانات العميل / Client Info</h2>
+<label>الاسم / Name</label><input id="name"/>
+<label>الهاتف / Phone</label><input id="phone"/>
+<label>العنوان / Address</label><textarea id="address"></textarea>
+<label>تاريخ الزيارة / Visit Date</label><input id="date" type="date"/>
+<div class="btns"><button onclick="next('page-client','page-location')">التالي</button></div>
+</div>
+<div class="container hidden" id="page-location">
+<h2>موقع الستارة / Curtain Location</h2>
+<label>موقع الستارة / Curtain Location (e.g., Living Room, Bedroom...)</label>
+<input id="curtain-location"/>
+<div class="btns">
+<button onclick="next('page-location','page-client', true)">عودة</button>
+<button onclick="next('page-location','page-details')">التالي</button>
+</div>
+</div>
+<div class="container hidden" id="page-details">
+<h2>قياسات النافذة / Window Measurements</h2>
+<label>العرض (سم) / Width (cm)</label>
+<input id="width" oninput="calcCurtainPrice()" type="number"/>
+<label>الارتفاع (سم) / Height (cm)</label>
+<input id="height" oninput="calcCurtainPrice()" type="number"/>
+<label>صورة النافذة / Window Photo</label>
+<input accept="image/*" capture="environment" id="windowPhoto" onchange="previewWindowPhoto(event)" type="file"/>
+<div id="windowPreview"></div>
+<label>نوع القماش / Fabric Type</label>
+<select id="fabric" onchange="calcCurtainPrice()"><option value="">اختر / Choose</option><option value="70">Chiffon - 70 AED / شيفون</option><option value="110">Velvet with Chiffon - 110 AED / مخمل مع شيفون</option><option value="150">Blackout with Chiffon - 150 AED / بلاك أوت مع شيفون</option></select>
+<div class="price-output">السعر: <span id="price">0</span> درهم + <span id="vat">0</span> VAT = <span id="total">0</span> درهم</div>
+<div class="btns">
+<button onclick="next('page-details','page-location', true)">عودة</button>
+<button onclick="next('page-details','page-fabric-photo')">التالي</button>
+</div>
+</div>
+<div class="container hidden" id="page-fabric-photo">
+<h2>تفاصيل القماش / Fabric Details</h2>
+<label>كود قماش الشيفون / Chiffon Code</label>
+<input id="codeChiffon" placeholder="مثال: CH-123"/>
+<label>صورة قماش الشيفون / Chiffon Photo</label>
+<input accept="image/*" capture="environment" id="photoChiffon" onchange="previewFabricPhoto(event,'chiffonPreview')" type="file"/>
+<div id="chiffonPreview"></div>
+<label>كود قماش البلاك أوت / مخمل / Blackout or Velvet Code</label>
+<input id="codeBlackout" placeholder="مثال: BO-456"/>
+<label>صورة قماش البلاك أوت / مخمل / Blackout or Velvet Photo</label>
+<input accept="image/*" capture="environment" id="photoBlackout" onchange="previewFabricPhoto(event,'blackoutPreview')" type="file"/>
+<div id="blackoutPreview"></div>
+<div class="btns">
+<button onclick="next('page-fabric-photo','page-details', true)">عودة</button>
+<button onclick="saveCurtain()">التالي</button>
+</div>
+</div>
+<div class="container hidden" id="page-choice">
+<h2>ماذا تريد؟ / What do you want?</h2>
+<div class="btns">
+<button onclick="next('page-choice','page-location'); resetCurtainForm();">➕ إضافة ستارة أخرى</button>
+<button onclick="showSummary()">✅ الذهاب إلى الملخص</button>
+</div>
+</div>
+<div class="container hidden" id="page-summary">
+<h2>ملخص الطلب / Order Summary</h2>
+<div id="summaryContent"></div>
+<div id="totalBox">
+<p>الإجمالي بدون VAT: <span id="sumPrice">0</span> درهم</p>
+<p>إجمالي VAT (5%): <span id="sumVAT">0</span> درهم</p>
+<p><strong>الإجمالي النهائي: <span id="sumTotal">0</span> درهم</strong></p>
+</div>
+<div class="btns">
+<button onclick="window.generatePDF()">تحميل PDF</button>
+<button onclick="sendToWhatsApp()">إرسال واتساب</button>
+</div>
+</div>
+<script>
+
+function handleImageUpload(file, callback) {
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const img = new Image();
+    img.onload = function () {
+      let canvas = document.createElement("canvas");
+      let ctx = canvas.getContext("2d");
+
+      if (img.width > img.height) {
+        // الصورة بوضع landscape: تدوير 90 درجة
+        canvas.width = img.height;
+        canvas.height = img.width;
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(-90 * Math.PI / 180);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      } else {
+        // الصورة بوضع عادي
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+      }
+
+      const normalizedBase64 = canvas.toDataURL("image/jpeg");
+      callback(normalizedBase64);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+
+
+
+let curtains = [];
+let windowPhotoData = null, chiffonPhotoData = null, blackoutPhotoData = null;
+  document.getElementById('windowPreview').innerHTML = "";
+  document.getElementById('chiffonPreview').innerHTML = "";
+  document.getElementById('blackoutPreview').innerHTML = "";
+
+function next(from, to, back=false){
+  document.getElementById(from).classList.add('hidden');
+  document.getElementById(to).classList.remove('hidden');
+}
+
+function previewWindowPhoto(e){
+  const file = e.target.files[0];
+  if (file){
+    windowPhotoData = URL.createObjectURL(file);
+    document.getElementById("windowPreview").innerHTML = `<img src="${windowPhotoData}" class="preview-img">`;
+  }
+}
+
+function previewFabricPhoto(e, previewId){
+  const file = e.target.files[0];
+  if (file){
+    const imgURL = URL.createObjectURL(file);
+    if(previewId === 'chiffonPreview') chiffonPhotoData = imgURL;
+    else blackoutPhotoData = imgURL;
+    document.getElementById(previewId).innerHTML = `<img src="${imgURL}" class="preview-img">`;
+  }
+}
+
+function calcCurtainPrice() {
+  const w = parseFloat(document.getElementById("width").value) || 0;
+  const h = parseFloat(document.getElementById("height").value) || 0;
+  const fabric = parseFloat(document.getElementById("fabric").value) || 0;
+  const area = (w / 100) * (h / 100);
+  const price = area * fabric;
+  const vat = price * 0.05;
+  const total = price + vat;
+
+  document.getElementById("price").innerText = price.toFixed(2);
+  document.getElementById("vat").innerText = vat.toFixed(2);
+  document.getElementById("total").innerText = total.toFixed(2);
+}
+
+function saveCurtain() {
+  const curtain = {
+    location: document.getElementById("curtain-location").value,
+    width: document.getElementById("width").value,
+    height: document.getElementById("height").value,
+    fabric: document.getElementById("fabric").selectedOptions[0].text,
+    price: document.getElementById("price").innerText,
+    vat: document.getElementById("vat").innerText,
+    total: document.getElementById("total").innerText,
+    codeChiffon: document.getElementById("codeChiffon").value,
+    codeBlackout: document.getElementById("codeBlackout").value,
+    windowPhoto: windowPhotoData,
+    chiffonPhoto: chiffonPhotoData,
+    blackoutPhoto: blackoutPhotoData
+  };
+  curtains.push(curtain);
+  next('page-fabric-photo','page-choice');
+}
+
+function resetCurtainForm() {
+  document.getElementById("curtain-location").value = "";
+  document.getElementById("width").value = "";
+  document.getElementById("height").value = "";
+  document.getElementById("fabric").selectedIndex = 0;
+  document.getElementById("price").innerText = "0";
+  document.getElementById("vat").innerText = "0";
+  document.getElementById("total").innerText = "0";
+  document.getElementById("codeChiffon").value = "";
+  document.getElementById("codeBlackout").value = "";
+  document.getElementById("windowPreview").innerHTML = "";
+  document.getElementById("chiffonPreview").innerHTML = "";
+  document.getElementById("blackoutPreview").innerHTML = "";
+  windowPhotoData = null;
+  chiffonPhotoData = null;
+  blackoutPhotoData = null;
+  document.getElementById('windowPreview').innerHTML = "";
+  document.getElementById('chiffonPreview').innerHTML = "";
+  document.getElementById('blackoutPreview').innerHTML = "";
+}
+
+function showSummary() {
+  next('page-choice','page-summary');
+  const s = document.getElementById("summaryContent");
+  let summary = `
+    <p><strong>الاسم:</strong> ${document.getElementById("name").value}</p>
+    <p><strong>الهاتف:</strong> ${document.getElementById("phone").value}</p>
+    <p><strong>العنوان:</strong> ${document.getElementById("address").value}</p>
+    <p><strong>تاريخ الزيارة:</strong> ${document.getElementById("date").value}</p>
+    <hr />
+  `;
+  let totalPrice = 0, totalVAT = 0;
+
+  curtains.forEach((curtain, index) => {
+    summary += `
+      <div class="curtain-summary">
+        <h3>ستارة ${index + 1} (${curtain.location})</h3>
+        <p><strong>العرض:</strong> ${curtain.width} سم</p>
+        <p><strong>الارتفاع:</strong> ${curtain.height} سم</p>
+        <p><strong>نوع القماش:</strong> ${curtain.fabric}</p>
+        <p><strong>كود الشيفون:</strong> ${curtain.codeChiffon}</p>
+        <p><strong>كود البلاك أوت/مخمل:</strong> ${curtain.codeBlackout}</p>
+        <p><strong>السعر:</strong> ${curtain.price} درهم + ${curtain.vat} VAT = ${curtain.total} درهم</p>
+        ${curtain.windowPhoto ? `<img src="${curtain.windowPhoto}" class="preview-img">` : ""}
+        ${curtain.chiffonPhoto ? `<img src="${curtain.chiffonPhoto}" class="preview-img">` : ""}
+        ${curtain.blackoutPhoto ? `<img src="${curtain.blackoutPhoto}" class="preview-img">` : ""}
+      </div>
+    `;
+    totalPrice += parseFloat(curtain.price);
+    totalVAT += parseFloat(curtain.vat);
+  });
+
+  document.getElementById("sumPrice").innerText = totalPrice.toFixed(2);
+  document.getElementById("sumVAT").innerText = totalVAT.toFixed(2);
+  document.getElementById("sumTotal").innerText = (totalPrice + totalVAT).toFixed(2);
+  s.innerHTML = summary;
+}
+
+async function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const element = document.getElementById("summaryContent");
+  const canvas = await html2canvas(element, { scale: 2 });
+  const img = canvas.toDataURL("image/jpeg", 1.0);
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const imgProps = pdf.getImageProperties(img);
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+  pdf.addImage(img, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+  pdf.save("طلب_ستائر.pdf");
+}
+
+
+
+function getFabricOnly(fullText) {
+  if (!fullText) return "";
+  if (fullText.includes("Velvet")) return "Velvet with Chiffon";
+  if (fullText.includes("Blackout")) return "Blackout with Chiffon";
+  if (fullText.includes("Chiffon")) return "Chiffon";
+  return fullText;
+}
+
+
+
+function fixImageOrientation(base64, callback) {
+  const img = new Image();
+  img.onload = function () {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    const cleanBase64 = canvas.toDataURL("image/jpeg");
+    callback(cleanBase64);
+  };
+  img.src = base64;
+}
+
+
+function sendToWhatsApp() {
+  const name = document.getElementById("name").value;
+  const total = document.getElementById("sumTotal").innerText;
+  const msg = `طلب ستائر\nالاسم: ${name}\nالإجمالي النهائي: ${total} درهم`;
+  window.open(`https://wa.me/971504133032?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+
+window.generatePDF = generatePDF;
+
+window.generatePDF = async function () {
+  const doc = new jspdf.jsPDF("p", "mm", "a4");
+  let y = 20;
+
+  const logo = new Image();
+  logo.src = "https://i.postimg.cc/L4QwkTxg/LOGO23333.png";
+  await new Promise(resolve => logo.onload = resolve);
+  const ratio = logo.width / logo.height;
+  const logoHeight = 20;
+  const logoWidth = ratio * logoHeight;
+  const xLogo = (210 - logoWidth) / 2;
+  doc.addImage(logo, "PNG", xLogo, y, logoWidth, logoHeight);
+  y += logoHeight + 5;
+
+  // Client Info
+  const name = document.getElementById("name").value;
+  const phone = document.getElementById("phone").value;
+  const address = document.getElementById("address").value;
+  const date = document.getElementById("date").value;
+
+  doc.setFontSize(11);
+  doc.text("Client Name: " + name, 14, y); y += 6;
+  doc.text("Phone: " + phone, 14, y); y += 6;
+  doc.text("Address: " + address, 14, y); y += 6;
+  doc.text("Visit Date: " + date, 14, y); y += 8;
+
+  doc.setFontSize(14);
+  doc.text("Order Summary", 105, y, { align: "center" });
+  y += 10;
+
+  const headers = [["Location", "Width", "Height", "Fabric", "Chiffon Code", "Blackout Code", "Price (AED)"]];
+  const rows = [];
+  let totalPrice = 0, totalVAT = 0;
+
+  for (let i = 0; i < curtains.length; i++) {
+    const c = curtains[i];
+    totalPrice += parseFloat(c.price);
+    totalVAT += parseFloat(c.vat);
+    
+    
+    rows.push([c.location, c.width, c.height, getFabricOnly(c.fabric),
+      c.codeChiffon,
+      c.codeBlackout,
+      c.total + " AED"
+    ]);
+  }
+
+  doc.autoTable({
+    head: headers,
+    body: rows,
+    startY: y,
+    styles: { fontSize: 9 },
+    columnStyles: { 6: { cellWidth: 25 } },
+    didDrawPage: function (data) {
+      y = data.cursor.y + 5;
+    }
+  });
+
+  // Images
+  for (let i = 0; i < curtains.length; i++) {
+    const c = curtains[i];
+    doc.setFontSize(11);
+    doc.text("Images for Curtain " + (i + 1), 14, y);
+    y += 4;
+
+    const loadAndAdd = async (src, x, y, label) => {
+      if (src) {
+        const img = new Image();
+        img.src = src;
+        await new Promise(resolve => img.onload = resolve);
+        doc.addImage(img, "JPEG", x, y, 40, 30);
+        doc.setFontSize(8);
+        doc.text(label, x, y + 34);
+      }
+    };
+
+    await loadAndAdd(c.windowPhoto, 14, y, "Window");
+    await loadAndAdd(c.chiffonPhoto, 50, y, "Chiffon");
+    await loadAndAdd(c.blackoutPhoto, 86, y, "Blackout");
+
+    y += 42;
+    if (y > 250) {
+      doc.addPage();
+      y = 20;
+    }
+  }
+
+  y += 5;
+  doc.setFontSize(11);
+  doc.text("Total without VAT: " + totalPrice.toFixed(2) + " AED", 14, y);
+  y += 6;
+  doc.text("VAT (5%): " + totalVAT.toFixed(2) + " AED", 14, y);
+  y += 6;
+  doc.text("Final Total: " + (totalPrice + totalVAT).toFixed(2) + " AED", 14, y);
+  y += 10;
+
+  const terms = [
+    "(I) - 75% of the contract value shall be payable as advance payment at the time of signing the contract.",
+    "(II) - 25% at Finishing 50% of work.",
+    "(IV) - The payment shall be released as per the mutually agreed terms & conditions.",
+    "(IV) - Any additional works will be charged."
+  ];
+  doc.setFontSize(11);
+  doc.text("Payment Terms:", 14, y);
+  y += 6;
+  terms.forEach(t => {
+    doc.text(t, 14, y);
+    y += 6;
+  });
+
+  doc.save("Curtain_Order_Summary.pdf");
+};</script>
+</body>
+</html>
