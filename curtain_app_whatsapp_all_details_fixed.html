@@ -38,7 +38,34 @@ function updateTotal() {
     }
     .curtain-summary { border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px; }
     img.preview-img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
-  </style>
+  
+.fabric-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  gap: 6px;
+}
+.fabric-btn {
+  display: inline-block;
+  margin: 6px 4px;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f0f0f0;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+.fabric-btn:hover {
+  background: #e0e0e0;
+}
+.fabric-btn.selected {
+  background: #b58e00;
+  color: white;
+  border-color: #8e6c00;
+}
+
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
 function updateTotal() {
   const total = parseFloat(document.getElementById("sumTotal").innerText) || 0;
@@ -84,24 +111,36 @@ function updateTotal() {
 <input accept="image/*" capture="environment" id="windowPhoto" onchange="previewWindowPhoto(event)" type="file"/>
 <div id="windowPreview"></div>
 <label>نوع القماش / Fabric Type</label>
-<select id="fabric" onchange="calcCurtainPrice()">
-  <option value="">اختر / Choose</option>
-  <option value="70">Chiffon - 70 AED / شيفون</option>
-  <option value="90">Chiffon Wavy - 90 AED / شيفون ويفي</option>
-  <option value="90">Velvet - 90 AED / مخمل</option>
-  <option value="100">Velvet Wavy - 100 AED / مخمل ويفي</option>
-  <option value="110">Velvet with Chiffon - 110 AED / مخمل مع شيفون</option>
-  <option value="130">Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون</option>
-  <option value="120">Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي</option>
-  <option value="150">Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي</option>
-  <option value="120">Blackout - 120 AED / بلاك اوت</option>
-  <option value="135">Blackout Wavy - 135 AED / بلاك اوت ويفي</option>
-  <option value="150">Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون</option>
-  <option value="185">Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون</option>
-  <option value="170">Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي</option>
-  <option value="200">Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي</option>
-  <option value="120">Roll-up - 120 AED / رول اب</option>
-</select>
+<div id="fabricButtonsContainer">
+<div class="fabric-row">
+<button type="button" class="fabric-btn" data-price="70" data-label="Chiffon - 70 AED / شيفون">Chiffon - 70 AED / شيفون</button>
+<button type="button" class="fabric-btn" data-price="90" data-label="Chiffon Wavy - 90 AED / شيفون ويفي">Chiffon Wavy - 90 AED / شيفون ويفي</button>
+</div>
+<div class="fabric-row">
+<button type="button" class="fabric-btn" data-price="90" data-label="Velvet - 90 AED / مخمل">Velvet - 90 AED / مخمل</button>
+<button type="button" class="fabric-btn" data-price="100" data-label="Velvet Wavy - 100 AED / مخمل ويفي">Velvet Wavy - 100 AED / مخمل ويفي</button>
+<button type="button" class="fabric-btn" data-price="110" data-label="Velvet with Chiffon - 110 AED / مخمل مع شيفون">Velvet with Chiffon - 110 AED / مخمل مع شيفون</button>
+<button type="button" class="fabric-btn" data-price="130" data-label="Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون">Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون</button>
+</div>
+<div class="fabric-row">
+<button type="button" class="fabric-btn" data-price="120" data-label="Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي">Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي</button>
+<button type="button" class="fabric-btn" data-price="150" data-label="Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي">Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي</button>
+</div>
+<div class="fabric-row">
+<button type="button" class="fabric-btn" data-price="120" data-label="Blackout - 120 AED / بلاك اوت">Blackout - 120 AED / بلاك اوت</button>
+<button type="button" class="fabric-btn" data-price="135" data-label="Blackout Wavy - 135 AED / بلاك اوت ويفي">Blackout Wavy - 135 AED / بلاك اوت ويفي</button>
+<button type="button" class="fabric-btn" data-price="150" data-label="Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون">Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون</button>
+<button type="button" class="fabric-btn" data-price="185" data-label="Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون">Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون</button>
+</div>
+<div class="fabric-row">
+<button type="button" class="fabric-btn" data-price="170" data-label="Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي">Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي</button>
+<button type="button" class="fabric-btn" data-price="200" data-label="Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي">Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي</button>
+</div>
+<div class="fabric-row">
+<button type="button" class="fabric-btn" data-price="120" data-label="Roll-up - 120 AED / رول اب">Roll-up - 120 AED / رول اب</button>
+</div>
+</div>
+<input type="hidden" id="fabric" />
 <div class="price-output">السعر: <span id="price">0</span> درهم + <span id="vat">0</span> VAT = <span id="total">0</span> درهم</div>
 <div class="btns">
 <button onclick="next('page-details','page-location', true)">عودة</button>
@@ -135,6 +174,9 @@ function updateTotal() {
 <div class="container hidden" id="page-summary">
 <h2>ملخص الطلب / Order Summary</h2>
 <div id="summaryContent"></div>
+<label>ملاحظات / Notes</label>
+<textarea id="notes" placeholder="اكتب ملاحظاتك هنا / Add any notes here..."></textarea>
+<br/>
 <div id="totalBox">
 <p>الإجمالي بدون VAT: <span id="sumPrice">0</span> درهم</p>
 <p>إجمالي VAT (5%): <span id="sumVAT">0</span> درهم</p>
@@ -212,6 +254,18 @@ function previewFabricPhoto(e, previewId){
   }
 }
 
+
+document.querySelectorAll('.fabric-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fabric-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('fabric').value = btn.getAttribute('data-price');
+    document.getElementById('fabric').setAttribute('data-label', btn.getAttribute('data-label'));
+    calcCurtainPrice();
+  });
+});
+
+
 function calcCurtainPrice() {
   const w = parseFloat(document.getElementById("width").value) || 0;
   const h = parseFloat(document.getElementById("height").value) || 0;
@@ -231,7 +285,7 @@ function saveCurtain() {
     location: document.getElementById("curtain-location").value,
     width: document.getElementById("width").value,
     height: document.getElementById("height").value,
-    fabric: document.getElementById("fabric").selectedOptions[0].text,
+    fabric: document.getElementById("fabric").getAttribute("data-label"),
     price: document.getElementById("price").innerText,
     vat: document.getElementById("vat").innerText,
     total: document.getElementById("total").innerText,
@@ -304,6 +358,7 @@ function showSummary() {
   document.getElementById("sumPrice").innerText = totalPrice.toFixed(2);
   document.getElementById("sumVAT").innerText = totalVAT.toFixed(2);
   document.getElementById("sumTotal").innerText = (totalPrice + totalVAT).toFixed(2);
+  summary += `<p><strong>ملاحظات:</strong> ${document.getElementById("notes").value}</p>`;
   s.innerHTML = summary;
 }
 
@@ -322,26 +377,7 @@ async function generatePDF() {
 
 
 
-const fabricMap = {
-"Chiffon - 70 AED / شيفون": "Chiffon",
-"Chiffon Wavy - 90 AED / شيفون ويفي": "Chiffon Wavy",
-"Velvet - 90 AED / مخمل": "Velvet",
-"Velvet Wavy - 100 AED / مخمل ويفي": "Velvet Wavy",
-"Velvet with Chiffon - 110 AED / مخمل مع شيفون": "Velvet with Chiffon",
-"Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون": "Velvet Wavy with Chiffon",
-"Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي": "Velvet with Chiffon Wavy",
-"Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي": "Velvet Wavy with Chiffon Wavy",
-"Blackout - 120 AED / بلاك اوت": "Blackout",
-"Blackout Wavy - 135 AED / بلاك اوت ويفي": "Blackout Wavy",
-"Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون": "Blackout with Chiffon",
-"Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون": "Blackout Wavy with Chiffon",
-"Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي": "Blackout with Chiffon Wavy",
-"Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي": "Blackout Wavy with Chiffon Wavy",
-"Roll-up - 120 AED / رول اب": "Roll-up"
-};
-
 function getFabricOnly(fullText) {
-  return fabricMap[fullText] || fullText;
   if (!fullText) return "";
   if (fullText.includes("Velvet")) return "Velvet with Chiffon";
   if (fullText.includes("Blackout")) return "Blackout with Chiffon";
@@ -368,8 +404,38 @@ function fixImageOrientation(base64, callback) {
 
 function sendToWhatsApp() {
   const name = document.getElementById("name").value;
+  const phone = document.getElementById("phone").value;
+  const address = document.getElementById("address").value;
+  const date = document.getElementById("date").value;
+  const notes = document.getElementById("notes").value;
+
+  let msg = `طلب ستائر\n`;
+  msg += `الاسم: ${name}\n`;
+  msg += `الهاتف: ${phone}\n`;
+  msg += `العنوان: ${address}\n`;
+  msg += `تاريخ الزيارة: ${date}\n`;
+
+  curtains.forEach((c, i) => {
+    msg += `\nستارة ${i+1} (${c.location})\n`;
+    msg += `العرض: ${c.width} سم\n`;
+    msg += `الارتفاع: ${c.height} سم\n`;
+    msg += `نوع القماش: ${c.fabric}\n`;
+    msg += `كود الشيفون: ${c.codeChiffon}\n`;
+    msg += `كود البلاك أوت/مخمل: ${c.codeBlackout}\n`;
+    msg += `السعر: ${c.price} + ${c.vat} VAT = ${c.total} درهم\n`;
+  });
+
   const total = document.getElementById("sumTotal").innerText;
-  const msg = `طلب ستائر\nالاسم: ${name}\nالإجمالي النهائي: ${total} درهم`;
+  const discount = document.getElementById("discount").value;
+  const finalAfterDiscount = document.getElementById("sumAfterDiscount").innerText;
+
+  msg += `\nالإجمالي: ${total} درهم`;
+  if (discount) {
+    msg += `\nالخصم: ${discount} درهم`;
+    msg += `\nبعد الخصم: ${finalAfterDiscount} درهم`;
+  }
+  if (notes) msg += `\nملاحظات: ${notes}`;
+
   window.open(`https://wa.me/971504133032?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -400,7 +466,11 @@ window.generatePDF = async function () {
   doc.text("Client Name: " + name, 14, y); y += 6;
   doc.text("Phone: " + phone, 14, y); y += 6;
   doc.text("Address: " + address, 14, y); y += 6;
-  doc.text("Visit Date: " + date, 14, y); y += 8;
+  doc.text("Visit Date: " + date, 14, y); y += 6;
+  const notes = document.getElementById("notes").value;
+  if (notes) {
+    doc.text("Notes: " + notes, 14, y); y += 8;
+  } else { y += 2; }
 
   doc.setFontSize(14);
   doc.text("Order Summary", 105, y, { align: "center" });
@@ -495,7 +565,8 @@ window.generatePDF = async function () {
     y += 6;
   });
 
-  doc.save("Curtain_Order_Summary.pdf");
+  const safeName = name.replace(/[^a-zA-Z0-9؀-ۿ ]+/g, "_").substring(0, 20).trim();
+  doc.save(`${safeName}_Curtain_Order.pdf`);
 };
 function updateTotal() {
   const total = parseFloat(document.getElementById("sumTotal").innerText) || 0;
