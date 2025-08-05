@@ -6,7 +6,15 @@
 <meta charset="utf-8"/>
 <title>تطبيق ستائر متعدد - Victorian Art</title>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+function updateTotal() {
+  const total = parseFloat(document.getElementById("sumTotal").innerText) || 0;
+  const discount = parseFloat(document.getElementById("discount").value) || 0;
+  const final = total - discount;
+  document.getElementById("sumAfterDiscount").innerText = final.toFixed(2);
+}
+</script>
+
 <style>
     body { font-family: 'Amiri', serif; background: #f7f7f7; padding: 20px; margin: 0; }
     .container { background: white; padding: 20px; border-radius: 15px; max-width: 700px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
@@ -31,7 +39,23 @@
     .curtain-summary { border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px; }
     img.preview-img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
   </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script></head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+function updateTotal() {
+  const total = parseFloat(document.getElementById("sumTotal").innerText) || 0;
+  const discount = parseFloat(document.getElementById("discount").value) || 0;
+  const final = total - discount;
+  document.getElementById("sumAfterDiscount").innerText = final.toFixed(2);
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js">
+function updateTotal() {
+  const total = parseFloat(document.getElementById("sumTotal").innerText) || 0;
+  const discount = parseFloat(document.getElementById("discount").value) || 0;
+  const final = total - discount;
+  document.getElementById("sumAfterDiscount").innerText = final.toFixed(2);
+}
+</script>
+</head>
 <body>
 <div class="container" id="page-client">
 <h2>بيانات العميل / Client Info</h2>
@@ -60,7 +84,24 @@
 <input accept="image/*" capture="environment" id="windowPhoto" onchange="previewWindowPhoto(event)" type="file"/>
 <div id="windowPreview"></div>
 <label>نوع القماش / Fabric Type</label>
-<select id="fabric" onchange="calcCurtainPrice()"><option value="">اختر / Choose</option><option value="70">Chiffon - 70 AED / شيفون</option><option value="110">Velvet with Chiffon - 110 AED / مخمل مع شيفون</option><option value="150">Blackout with Chiffon - 150 AED / بلاك أوت مع شيفون</option></select>
+<select id="fabric" onchange="calcCurtainPrice()">
+  <option value="">اختر / Choose</option>
+  <option value="70">Chiffon - 70 AED / شيفون</option>
+  <option value="90">Chiffon Wavy - 90 AED / شيفون ويفي</option>
+  <option value="90">Velvet - 90 AED / مخمل</option>
+  <option value="100">Velvet Wavy - 100 AED / مخمل ويفي</option>
+  <option value="110">Velvet with Chiffon - 110 AED / مخمل مع شيفون</option>
+  <option value="130">Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون</option>
+  <option value="120">Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي</option>
+  <option value="150">Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي</option>
+  <option value="120">Blackout - 120 AED / بلاك اوت</option>
+  <option value="135">Blackout Wavy - 135 AED / بلاك اوت ويفي</option>
+  <option value="150">Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون</option>
+  <option value="185">Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون</option>
+  <option value="170">Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي</option>
+  <option value="200">Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي</option>
+  <option value="120">Roll-up - 120 AED / رول اب</option>
+</select>
 <div class="price-output">السعر: <span id="price">0</span> درهم + <span id="vat">0</span> VAT = <span id="total">0</span> درهم</div>
 <div class="btns">
 <button onclick="next('page-details','page-location', true)">عودة</button>
@@ -98,6 +139,9 @@
 <p>الإجمالي بدون VAT: <span id="sumPrice">0</span> درهم</p>
 <p>إجمالي VAT (5%): <span id="sumVAT">0</span> درهم</p>
 <p><strong>الإجمالي النهائي: <span id="sumTotal">0</span> درهم</strong></p>
+
+<p>الخصم / Discount: <input id="discount" oninput="updateTotal()" placeholder="0" style="width:100px" type="number"/> درهم</p>
+<p><strong>الإجمالي بعد الخصم: <span id="sumAfterDiscount">0</span> درهم</strong></p>
 </div>
 <div class="btns">
 <button onclick="window.generatePDF()">تحميل PDF</button>
@@ -278,7 +322,26 @@ async function generatePDF() {
 
 
 
+const fabricMap = {
+"Chiffon - 70 AED / شيفون": "Chiffon",
+"Chiffon Wavy - 90 AED / شيفون ويفي": "Chiffon Wavy",
+"Velvet - 90 AED / مخمل": "Velvet",
+"Velvet Wavy - 100 AED / مخمل ويفي": "Velvet Wavy",
+"Velvet with Chiffon - 110 AED / مخمل مع شيفون": "Velvet with Chiffon",
+"Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون": "Velvet Wavy with Chiffon",
+"Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي": "Velvet with Chiffon Wavy",
+"Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي": "Velvet Wavy with Chiffon Wavy",
+"Blackout - 120 AED / بلاك اوت": "Blackout",
+"Blackout Wavy - 135 AED / بلاك اوت ويفي": "Blackout Wavy",
+"Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون": "Blackout with Chiffon",
+"Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون": "Blackout Wavy with Chiffon",
+"Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي": "Blackout with Chiffon Wavy",
+"Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي": "Blackout Wavy with Chiffon Wavy",
+"Roll-up - 120 AED / رول اب": "Roll-up"
+};
+
 function getFabricOnly(fullText) {
+  return fabricMap[fullText] || fullText;
   if (!fullText) return "";
   if (fullText.includes("Velvet")) return "Velvet with Chiffon";
   if (fullText.includes("Blackout")) return "Blackout with Chiffon";
@@ -407,6 +470,15 @@ window.generatePDF = async function () {
   doc.text("VAT (5%): " + totalVAT.toFixed(2) + " AED", 14, y);
   y += 6;
   doc.text("Final Total: " + (totalPrice + totalVAT).toFixed(2) + " AED", 14, y);
+  y += 6;
+  const discountEl = document.getElementById("discount");
+  if (discountEl && discountEl.value) {
+    const discount = parseFloat(discountEl.value) || 0;
+    doc.text("Discount: -" + discount.toFixed(2) + " AED", 14, y);
+    y += 6;
+    const finalAfterDiscount = totalPrice + totalVAT - discount;
+    doc.text("Total After Discount: " + finalAfterDiscount.toFixed(2) + " AED", 14, y);
+  }
   y += 10;
 
   const terms = [
@@ -424,6 +496,14 @@ window.generatePDF = async function () {
   });
 
   doc.save("Curtain_Order_Summary.pdf");
-};</script>
+};
+function updateTotal() {
+  const total = parseFloat(document.getElementById("sumTotal").innerText) || 0;
+  const discount = parseFloat(document.getElementById("discount").value) || 0;
+  const final = total - discount;
+  document.getElementById("sumAfterDiscount").innerText = final.toFixed(2);
+}
+</script>
+
 </body>
 </html>
