@@ -211,15 +211,19 @@ function resetCurtainForm() {
   document.getElementById("total").innerText = "0";
   document.getElementById("codeChiffon").value = "";
   document.getElementById("codeBlackout").value = "";
-  document.getElementById("windowPreview").innerHTML = "";
-  document.getElementById("chiffonPreview").innerHTML = "";
-  document.getElementById("blackoutPreview").innerHTML = "";
+
+  // تفريغ الصور والمعاينات
   windowPhotoData = null;
   chiffonPhotoData = null;
   blackoutPhotoData = null;
   document.getElementById('windowPreview').innerHTML = "";
   document.getElementById('chiffonPreview').innerHTML = "";
   document.getElementById('blackoutPreview').innerHTML = "";
+
+  // تفريغ حقول تحميل الصور
+  document.getElementById("windowPhoto").value = "";
+  document.getElementById("photoChiffon").value = "";
+  document.getElementById("photoBlackout").value = "";
 }
 
 function showSummary() {
