@@ -1053,6 +1053,9 @@ function viewOrder(index) {
 <p><strong>كود الشيفون:</strong> ${curtain.codeChiffon}</p>
 <p><strong>كود البلاك أوت/مخمل:</strong> ${curtain.codeBlackout}</p>
 <p><strong>السعر:</strong> ${curtain.price} درهم + ${curtain.vat} VAT = ${curtain.total} درهم</p>
+${curtain.windowPhoto ? `<img src="${curtain.windowPhoto}" class="preview-img">` : ""}
+${curtain.chiffonPhoto ? `<img src="${curtain.chiffonPhoto}" class="preview-img">` : ""}
+${curtain.blackoutPhoto ? `<img src="${curtain.blackoutPhoto}" class="preview-img">` : ""}
 </div>
     `;
   });
