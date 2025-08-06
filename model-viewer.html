@@ -1,37 +1,66 @@
-<!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <title>3D Wooden Model</title>
+  <meta charset="UTF-8">
+  <title>تطبيق الكوتيشن - خزانة 3D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #eee;
+    body { font-family: Arial; margin: 0; padding: 0; background: #f5f5f5; }
+    header {
+      background-color: #333;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+    }
+    .page { display: none; padding: 20px; }
+    .page.active { display: block; }
+    input, textarea {
+      width: 100%; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc;
+    }
+    .next-button {
+      margin-top: 20px; padding: 10px 20px; background-color: #333; color: white; border: none; border-radius: 5px; cursor: pointer;
+    }
+    #canvas-container, #model-container {
+      width: 100%; height: 400px; background: #fff; margin-top: 30px;
     }
     model-viewer {
-      width: 100vw;
-      height: 100vh;
+      width: 100%; height: 400px;
     }
   </style>
 </head>
 <body>
+  <header>عرض خزانة ثلاثية الأبعاد</header>
 
-<model-viewer
-  src="AnyConv.com__model.glb"
-  alt="Wooden 3D Model"
-  auto-rotate
-  autoplay
-  camera-controls
-  exposure="0.8"
-  shadow-intensity="1"
-  camera-orbit="0deg 75deg auto"
-  environment-image="https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k_HDR.hdr"
->
-</model-viewer>
+  <div class="page active" id="wardrobe-details">
+    <label>الطول (سم)</label>
+    <input type="number" id="length" value="100">
+    <label>الارتفاع (سم)</label>
+    <input type="number" id="height" value="200">
+    <label>العمق (سم)</label>
+    <input type="number" id="depth" value="60">
+    <button class="next-button" onclick="show3DModel()">عرض 3D</button>
 
+    <div id="model-container" style="display:none">
+      <model-viewer
+        id="modelViewer"
+        src="AnyConv.com__model.glb"
+        alt="3D Model"
+        auto-rotate
+        autoplay
+        camera-controls
+        exposure="0.8"
+        shadow-intensity="1"
+        camera-orbit="0deg 75deg auto"
+        environment-image="https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k_HDR.hdr">
+      </model-viewer>
+    </div>
+  </div>
+
+  <script>
+    function show3DModel() {
+      document.getElementById("model-container").style.display = "block";
+    }
+  </script>
 </body>
 </html>
