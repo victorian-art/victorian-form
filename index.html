@@ -39,6 +39,58 @@ function saveOrder() {
 }
 
 function showOrders() {
+
+let selectedOrderIndex = null;
+
+function viewOrder(index) {
+  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
+  const o = orders[index];
+  selectedOrderIndex = index;
+
+  let html = `
+    <p><strong>الاسم:</strong> ${o.name}</p>
+    <p><strong>الهاتف:</strong> ${o.phone}</p>
+    <p><strong>العنوان:</strong> ${o.address}</p>
+    <p><strong>تاريخ الزيارة:</strong> ${o.date}</p>
+    <p><strong>ملاحظات:</strong> ${o.notes}</p>
+    <hr />
+  `;
+
+  o.curtains.forEach((curtain, i) => {
+    html += `
+      <div class="curtain-summary">
+        <h3>ستارة ${i + 1} (${curtain.location})</h3>
+        <p><strong>العرض:</strong> ${curtain.width} سم</p>
+        <p><strong>الارتفاع:</strong> ${curtain.height} سم</p>
+        <p><strong>نوع القماش:</strong> ${curtain.fabric}</p>
+        <p><strong>كود الشيفون:</strong> ${curtain.codeChiffon}</p>
+        <p><strong>كود البلاك أوت/مخمل:</strong> ${curtain.codeBlackout}</p>
+        <p><strong>السعر:</strong> ${curtain.price} درهم + ${curtain.vat} VAT = ${curtain.total} درهم</p>
+      </div>
+    `;
+  });
+
+  html += `
+    <hr/>
+    <p><strong>الإجمالي:</strong> ${o.total} درهم</p>
+    <p><strong>الخصم:</strong> ${o.discount} درهم</p>
+    <p><strong>بعد الخصم:</strong> ${o.afterDiscount} درهم</p>
+  `;
+
+  document.getElementById("viewOrderContent").innerHTML = html;
+
+  document.getElementById("editButton").onclick = function () {
+    editOrder(selectedOrderIndex);
+  };
+  document.getElementById("deleteButton").onclick = function () {
+    deleteOrder(selectedOrderIndex);
+    next('page-view-order','page-home');
+  };
+
+  next('page-orders','page-view-order');
+}
+
+
   const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
   let html = "";
 
@@ -50,7 +102,7 @@ function showOrders() {
         <div class="order-summary">
           <p><strong>${o.name}</strong> - ${o.date}</p>
           <p>الإجمالي: ${o.total} درهم</p>
-          <button onclick="editOrder(${index})">✏️ تعديل</button>
+          <button onclick='viewOrder(${index})'>👁️ عرض</button>
           <button onclick="deleteOrder(${index})">🗑️ حذف</button>
           <hr/>
         </div>
@@ -86,7 +138,6 @@ function editOrder(index) {
 }
 
 </script>
-
 <style>
     body { font-family: 'Amiri', serif; background: #f7f7f7; padding: 20px; margin: 0; }
     .container { background: white; padding: 20px; border-radius: 15px; max-width: 700px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
@@ -182,7 +233,7 @@ function showOrders() {
         <div class="order-summary">
           <p><strong>${o.name}</strong> - ${o.date}</p>
           <p>الإجمالي: ${o.total} درهم</p>
-          <button onclick="editOrder(${index})">✏️ تعديل</button>
+          <button onclick='viewOrder(${index})'>👁️ عرض</button>
           <button onclick="deleteOrder(${index})">🗑️ حذف</button>
           <hr/>
         </div>
@@ -262,7 +313,7 @@ function showOrders() {
         <div class="order-summary">
           <p><strong>${o.name}</strong> - ${o.date}</p>
           <p>الإجمالي: ${o.total} درهم</p>
-          <button onclick="editOrder(${index})">✏️ تعديل</button>
+          <button onclick='viewOrder(${index})'>👁️ عرض</button>
           <button onclick="deleteOrder(${index})">🗑️ حذف</button>
           <hr/>
         </div>
@@ -298,8 +349,7 @@ function editOrder(index) {
 }
 
 </script>
-
-<link rel="manifest" href="manifest.json" />
+<link href="manifest.json" rel="manifest"/>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js')
@@ -342,7 +392,7 @@ function showOrders() {
         <div class="order-summary">
           <p><strong>${o.name}</strong> - ${o.date}</p>
           <p>الإجمالي: ${o.total} درهم</p>
-          <button onclick="editOrder(${index})">✏️ تعديل</button>
+          <button onclick='viewOrder(${index})'>👁️ عرض</button>
           <button onclick="deleteOrder(${index})">🗑️ حذف</button>
           <hr/>
         </div>
@@ -378,24 +428,22 @@ function editOrder(index) {
 }
 
 </script>
-
 </head>
 <body>
 <div class="container" id="page-home">
-  <h2>مرحبًا بك في تطبيق الستائر</h2>
-  <div class="btns">
-    <button onclick="showOrders()">📋 الطلبات السابقة</button>
-    <button onclick="next('page-home','page-client')">➕ طلب جديد</button>
-  </div>
+<h2>مرحبًا بك في تطبيق الستائر</h2>
+<div class="btns">
+<button onclick="showOrders()">📋 الطلبات السابقة</button>
+<button onclick="next('page-home','page-client')">➕ طلب جديد</button>
+</div>
 </div>
 <div class="container hidden" id="page-orders">
-  <h2>📋 الطلبات السابقة</h2>
-  <div id="ordersList"></div>
-  <div class="btns">
-    <button onclick="next('page-orders','page-home')">🔙 رجوع</button>
-  </div>
+<h2>📋 الطلبات السابقة</h2>
+<div id="ordersList"></div>
+<div class="btns">
+<button onclick="next('page-orders','page-home')">🔙 رجوع</button>
 </div>
-
+</div>
 <div class="container" id="page-client">
 <h2>بيانات العميل / Client Info</h2>
 <label>الاسم / Name</label><input id="name"/>
@@ -425,34 +473,34 @@ function editOrder(index) {
 <label>نوع القماش / Fabric Type</label>
 <div id="fabricButtonsContainer">
 <div class="fabric-row">
-<button type="button" class="fabric-btn" data-price="70" data-label="Chiffon - 70 AED / شيفون">Chiffon - 70 AED / شيفون</button>
-<button type="button" class="fabric-btn" data-price="90" data-label="Chiffon Wavy - 90 AED / شيفون ويفي">Chiffon Wavy - 90 AED / شيفون ويفي</button>
+<button class="fabric-btn" data-label="Chiffon - 70 AED / شيفون" data-price="70" type="button">Chiffon - 70 AED / شيفون</button>
+<button class="fabric-btn" data-label="Chiffon Wavy - 90 AED / شيفون ويفي" data-price="90" type="button">Chiffon Wavy - 90 AED / شيفون ويفي</button>
 </div>
 <div class="fabric-row">
-<button type="button" class="fabric-btn" data-price="90" data-label="Velvet - 90 AED / مخمل">Velvet - 90 AED / مخمل</button>
-<button type="button" class="fabric-btn" data-price="100" data-label="Velvet Wavy - 100 AED / مخمل ويفي">Velvet Wavy - 100 AED / مخمل ويفي</button>
-<button type="button" class="fabric-btn" data-price="110" data-label="Velvet with Chiffon - 110 AED / مخمل مع شيفون">Velvet with Chiffon - 110 AED / مخمل مع شيفون</button>
-<button type="button" class="fabric-btn" data-price="130" data-label="Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون">Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون</button>
+<button class="fabric-btn" data-label="Velvet - 90 AED / مخمل" data-price="90" type="button">Velvet - 90 AED / مخمل</button>
+<button class="fabric-btn" data-label="Velvet Wavy - 100 AED / مخمل ويفي" data-price="100" type="button">Velvet Wavy - 100 AED / مخمل ويفي</button>
+<button class="fabric-btn" data-label="Velvet with Chiffon - 110 AED / مخمل مع شيفون" data-price="110" type="button">Velvet with Chiffon - 110 AED / مخمل مع شيفون</button>
+<button class="fabric-btn" data-label="Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون" data-price="130" type="button">Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون</button>
 </div>
 <div class="fabric-row">
-<button type="button" class="fabric-btn" data-price="120" data-label="Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي">Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي</button>
-<button type="button" class="fabric-btn" data-price="150" data-label="Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي">Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي</button>
+<button class="fabric-btn" data-label="Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي" data-price="120" type="button">Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي</button>
+<button class="fabric-btn" data-label="Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي" data-price="150" type="button">Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي</button>
 </div>
 <div class="fabric-row">
-<button type="button" class="fabric-btn" data-price="120" data-label="Blackout - 120 AED / بلاك اوت">Blackout - 120 AED / بلاك اوت</button>
-<button type="button" class="fabric-btn" data-price="135" data-label="Blackout Wavy - 135 AED / بلاك اوت ويفي">Blackout Wavy - 135 AED / بلاك اوت ويفي</button>
-<button type="button" class="fabric-btn" data-price="150" data-label="Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون">Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون</button>
-<button type="button" class="fabric-btn" data-price="185" data-label="Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون">Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون</button>
+<button class="fabric-btn" data-label="Blackout - 120 AED / بلاك اوت" data-price="120" type="button">Blackout - 120 AED / بلاك اوت</button>
+<button class="fabric-btn" data-label="Blackout Wavy - 135 AED / بلاك اوت ويفي" data-price="135" type="button">Blackout Wavy - 135 AED / بلاك اوت ويفي</button>
+<button class="fabric-btn" data-label="Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون" data-price="150" type="button">Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون</button>
+<button class="fabric-btn" data-label="Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون" data-price="185" type="button">Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون</button>
 </div>
 <div class="fabric-row">
-<button type="button" class="fabric-btn" data-price="170" data-label="Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي">Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي</button>
-<button type="button" class="fabric-btn" data-price="200" data-label="Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي">Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي</button>
+<button class="fabric-btn" data-label="Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي" data-price="170" type="button">Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي</button>
+<button class="fabric-btn" data-label="Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي" data-price="200" type="button">Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي</button>
 </div>
 <div class="fabric-row">
-<button type="button" class="fabric-btn" data-price="120" data-label="Roll-up - 120 AED / رول اب">Roll-up - 120 AED / رول اب</button>
+<button class="fabric-btn" data-label="Roll-up - 120 AED / رول اب" data-price="120" type="button">Roll-up - 120 AED / رول اب</button>
 </div>
 </div>
-<input type="hidden" id="fabric" />
+<input id="fabric" type="hidden"/>
 <div class="price-output">السعر: <span id="price">0</span> درهم + <span id="vat">0</span> VAT = <span id="total">0</span> درهم</div>
 <div class="btns">
 <button onclick="next('page-details','page-location', true)">عودة</button>
@@ -493,7 +541,6 @@ function editOrder(index) {
 <p>الإجمالي بدون VAT: <span id="sumPrice">0</span> درهم</p>
 <p>إجمالي VAT (5%): <span id="sumVAT">0</span> درهم</p>
 <p><strong>الإجمالي النهائي: <span id="sumTotal">0</span> درهم</strong></p>
-
 <p>الخصم / Discount: <input id="discount" oninput="updateTotal()" placeholder="0" style="width:100px" type="number"/> درهم</p>
 <p><strong>الإجمالي بعد الخصم: <span id="sumAfterDiscount">0</span> درهم</strong></p>
 </div>
@@ -924,7 +971,7 @@ function showOrders() {
         <div class="order-summary">
           <p><strong>${o.name}</strong> - ${o.date}</p>
           <p>الإجمالي: ${o.total} درهم</p>
-          <button onclick="editOrder(${index})">✏️ تعديل</button>
+          <button onclick='viewOrder(${index})'>👁️ عرض</button>
           <button onclick="deleteOrder(${index})">🗑️ حذف</button>
           <hr/>
         </div>
@@ -959,7 +1006,86 @@ function editOrder(index) {
   showSummary();
 }
 
-</script>
 
+function printOrder() {
+  const content = document.getElementById("viewOrderContent").innerHTML;
+  const win = window.open('', '', 'width=800,height=600');
+  win.document.write(`
+    <html>
+<head>
+<title>طباعة الطلب</title>
+<style>
+          body { font-family: 'Amiri', serif; direction: rtl; padding: 20px; }
+          .curtain-summary { border-bottom: 1px solid #ccc; margin-bottom: 10px; padding-bottom: 10px; }
+        </style>
+</head>
+<body onload="window.print(); window.close();">
+        ${content}
+      </body>
+</html>
+  `);
+  win.document.close();
+}
+
+let selectedOrderIndex = null;
+
+function viewOrder(index) {
+  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
+  const o = orders[index];
+  selectedOrderIndex = index;
+
+  let html = `
+    <p><strong>الاسم:</strong> ${o.name}</p>
+<p><strong>الهاتف:</strong> ${o.phone}</p>
+<p><strong>العنوان:</strong> ${o.address}</p>
+<p><strong>تاريخ الزيارة:</strong> ${o.date}</p>
+<p><strong>ملاحظات:</strong> ${o.notes}</p>
+<hr/>
+  `;
+
+  o.curtains.forEach((curtain, i) => {
+    html += `
+      <div class="curtain-summary">
+<h3>ستارة ${i + 1} (${curtain.location})</h3>
+<p><strong>العرض:</strong> ${curtain.width} سم</p>
+<p><strong>الارتفاع:</strong> ${curtain.height} سم</p>
+<p><strong>نوع القماش:</strong> ${curtain.fabric}</p>
+<p><strong>كود الشيفون:</strong> ${curtain.codeChiffon}</p>
+<p><strong>كود البلاك أوت/مخمل:</strong> ${curtain.codeBlackout}</p>
+<p><strong>السعر:</strong> ${curtain.price} درهم + ${curtain.vat} VAT = ${curtain.total} درهم</p>
+</div>
+    `;
+  });
+
+  html += `
+    <hr/>
+<p><strong>الإجمالي:</strong> ${o.total} درهم</p>
+<p><strong>الخصم:</strong> ${o.discount} درهم</p>
+<p><strong>بعد الخصم:</strong> ${o.afterDiscount} درهم</p>
+  `;
+
+  document.getElementById("viewOrderContent").innerHTML = html;
+
+  document.getElementById("editButton").onclick = function () {
+    editOrder(selectedOrderIndex);
+  };
+  document.getElementById("deleteButton").onclick = function () {
+    deleteOrder(selectedOrderIndex);
+    next('page-view-order','page-home');
+  };
+
+  next('page-orders','page-view-order');
+}
+</script>
+<div class="container hidden" id="page-view-order">
+<h2>📄 عرض الطلب</h2>
+<div id="viewOrderContent"></div>
+<div class="btns">
+<button id="editButton">✏️ تعديل</button>
+<button id="deleteButton">🗑️ حذف</button>
+<button onclick="printOrder()">🖨️ طباعة</button>
+<button onclick="next('page-view-order','page-home')">🏠 الرئيسية</button>
+</div>
+</div>
 </body>
 </html>
