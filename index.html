@@ -1014,10 +1014,28 @@ function printOrder() {
     <html>
 <head>
 <title>طباعة الطلب</title>
+
+
 <style>
-          body { font-family: 'Amiri', serif; direction: rtl; padding: 20px; }
-          .curtain-summary { border-bottom: 1px solid #ccc; margin-bottom: 10px; padding-bottom: 10px; }
-        </style>
+  body {
+    font-family: 'Amiri', serif;
+    direction: rtl;
+    padding: 20px;
+  }
+  .curtain-summary {
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+  }
+  img {
+    max-width: 200px;
+    max-height: 140px;
+    display: block;
+    margin-top: 8px;
+  }
+</style>
+
+
 </head>
 <body onload="window.print(); window.close();">
         ${content}
