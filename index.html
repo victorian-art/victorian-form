@@ -2,7 +2,7 @@
 <html dir="rtl" lang="ar">
 <head>
   <meta charset="utf-8"/>
-  <title>تطبيق ستائر — (مسافات PDF + ضغط الصور للحفظ)</title>
+  <title>تطبيق ستائر — (بداية طلب جديد بنموذج فارغ)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -60,7 +60,7 @@
     <h2>WELCOME V FURNITURE</h2>
     <div class="btns">
       <button type="button" class="btn" onclick="showOrders()">📋 الطلبات السابقة</button>
-      <button type="button" class="btn" onclick="goto('page-client'); setStep('client')">➕ طلب جديد</button>
+      <button type="button" class="btn" onclick="startNewOrder()">➕ طلب جديد</button>
     </div>
   </div>
 
@@ -69,7 +69,7 @@
     <h2>📋 الطلبات السابقة</h2>
     <div id="ordersList"></div>
     <div class="btns">
-      <button type="button" class="btn secondary" onclick="goto('page-home'); setStep(null)">🔙 رجوع</button>
+      <button type="button" class="btn secondary" onclick="goHome()">🔙 رجوع</button>
     </div>
   </div>
 
@@ -85,7 +85,7 @@
       <div><label>تاريخ الزيارة / Visit Date</label><input id="date" type="date"/></div>
     </div>
     <div class="btns">
-      <button type="button" class="btn secondary" onclick="goto('page-home'); setStep(null)">عودة</button>
+      <button type="button" class="btn secondary" onclick="goHome()">عودة</button>
       <button type="button" class="btn" onclick="goto('page-details'); setStep('measure')">التالي</button>
     </div>
   </div>
@@ -168,7 +168,7 @@
       <button type="button" id="btnPDF" class="btn" onclick="window.generatePDF()">تحميل PDF</button>
       <button type="button" id="btnSave" class="btn" onclick="saveOrder()">💾 حفظ</button>
       <button type="button" class="btn" onclick="sendToWhatsApp()">إرسال واتساب</button>
-      <button type="button" class="btn secondary" onclick="goto('page-home'); setStep(null)">🏠 الرئيسية</button>
+      <button type="button" class="btn secondary" onclick="goHome()">🏠 الرئيسية</button>
     </div>
   </div>
 
@@ -180,7 +180,7 @@
       <button type="button" id="editButton" class="btn">✏️ تعديل</button>
       <button type="button" id="deleteButton" class="btn del">🗑️ حذف</button>
       <button type="button" onclick="printOrder()" class="btn">🖨️ طباعة</button>
-      <button type="button" class="btn secondary" onclick="goto('page-home')">🏠 الرئيسية</button>
+      <button type="button" class="btn secondary" onclick="goHome()">🏠 الرئيسية</button>
     </div>
   </div>
 
@@ -191,40 +191,25 @@
     <div class="btns">
       <button type="button" class="btn ghost" onclick="addCurtainInEdit()">➕ إضافة ستارة</button>
       <button type="button" class="btn" onclick="saveEditedOrder()">💾 حفظ التعديلات</button>
-      <button type="button" class="btn secondary" onclick="cancelEdit()">إلغاء</button>
+      <button type="button" class="btn secondary" onclick="viewOrder(selectedOrderIndex)">إلغاء</button>
     </div>
   </div>
 
 <script>
-  // ====== إعدادات ضغط الصور لتفادي امتلاء localStorage ======
-  const MAX_IMG_W = 1200;      // أقصى عرض عند التخزين
-  const MAX_IMG_H = 900;       // أقصى ارتفاع
-  const JPEG_QUALITY = 0.7;    // جودة JPEG عند التخزين
-  const JPEG_QUALITY_FALLBACK = 0.6; // في حال بقي الحجم كبيراً
+  // ====== إعدادات ضغط الصور ======
+  const MAX_IMG_W = 1200, MAX_IMG_H = 900, JPEG_QUALITY = 0.7, JPEG_QUALITY_FALLBACK = 0.6;
 
   async function fileToResizedDataURL(file, maxW=MAX_IMG_W, maxH=MAX_IMG_H, quality=JPEG_QUALITY){
     const img = await new Promise((res,rej)=>{
       const fr = new FileReader();
-      fr.onload = () => {
-        const im = new Image();
-        im.onload = () => res(im);
-        im.onerror = rej;
-        im.src = fr.result;
-      };
-      fr.onerror = rej;
-      fr.readAsDataURL(file);
+      fr.onload = () => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = fr.result; };
+      fr.onerror = rej; fr.readAsDataURL(file);
     });
-
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-
-    let {width:w, height:h} = img;
-    const ratio = Math.min(maxW / w, maxH / h, 1);
-    const nw = Math.round(w * ratio);
-    const nh = Math.round(h * ratio);
-    canvas.width = nw;
-    canvas.height = nh;
-    ctx.drawImage(img, 0, 0, nw, nh);
+    const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+    const w = Math.round(img.width * ratio), h = Math.round(img.height * ratio);
+    canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
     return canvas.toDataURL('image/jpeg', quality);
   }
 
@@ -252,32 +237,46 @@
   let selectedOrderIndex = null; // للتعديل
   let editOrderObject = null;
 
-  // ====== تنقل بسيط ======
-  document.addEventListener('DOMContentLoaded', () => {
-    goto('page-home'); setStep(null);
-    buildFabricButtons();
-  });
+  // ====== تنقل ======
+  document.addEventListener('DOMContentLoaded', () => { goHome(); buildFabricButtons(); });
+
   function showOnly(id){ document.querySelectorAll('.container').forEach(c=>c.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
   function goto(id){ showOnly(id); }
   function setStep(which){
     const ids = ['client','measure','fabric','summary'];
-    ids.forEach(k => {
-      const el = document.getElementById('st-'+k);
-      if(!el) return;
-      if(which===k) el.classList.add('active'); else el.classList.remove('active');
-    });
+    ids.forEach(k => { const el = document.getElementById('st-'+k); if(!el) return; if(which===k) el.classList.add('active'); else el.classList.remove('active'); });
   }
 
-  // ====== محولات الصور (مع ضغط) ======
-  async function previewWindowPhoto(e){
-    const f=e.target.files&&e.target.files[0];
-    if(f){ windowPhotoData = await fileToResizedDataURL(f); document.getElementById("windowPreview").innerHTML='<img src="'+windowPhotoData+'" class="preview-img">'; }
+  // ====== إدارة جلسة الطلب الحالي (تفريغ تام) ======
+  function resetSession(){
+    curtains = []; currentFabricIndex = 0;
+    windowPhotoData = null; chiffonPhotoData = null; blackoutPhotoData = null;
+
+    const ids = ['name','phone','address','date','notes','discount','measure-location','width','height','codeChiffon','codeBlackout'];
+    ids.forEach(id=>{ const el=document.getElementById(id); if(el){ el.value=''; }});
+
+    const txts = ['sumPrice','sumVAT','sumTotal','sumAfterDiscount','price','vat','total'];
+    txts.forEach(id=>{ const el=document.getElementById(id); if(el){ el.innerText='0'; }});
+
+    ['windowPreview','chiffonPreview','blackoutPreview','measureList','summaryContent','ordersList','fabricInfo','fabricHeader'].forEach(id=>{
+      const div=document.getElementById(id); if(div){ div.innerHTML=''; }
+    });
+
+    ['windowPhoto','photoChiffon','photoBlackout'].forEach(id=>{ const f=document.getElementById(id); if(f){ f.value=''; }});
+
+    const hiddenFabric = document.getElementById('fabric');
+    if(hiddenFabric){ hiddenFabric.value=''; hiddenFabric.removeAttribute('data-label'); }
+    document.querySelectorAll('.fabric-btn').forEach(b=>b.classList.remove('selected'));
   }
-  function resetMeasurementForm(){
-    ['measure-location','width','height'].forEach(id=>document.getElementById(id).value='');
-    const file=document.getElementById('windowPhoto'); if(file) file.value='';
-    windowPhotoData=null; document.getElementById('windowPreview').innerHTML='';
-  }
+
+  function startNewOrder(){ resetSession(); setStep('client'); goto('page-client'); }
+  function goHome(){ resetSession(); setStep(null); goto('page-home'); }
+
+  // ====== معاينات الصور ======
+  async function previewWindowPhoto(e){ const f=e.target.files&&e.target.files[0]; if(f){ windowPhotoData = await fileToResizedDataURL(f); document.getElementById("windowPreview").innerHTML='<img src="'+windowPhotoData+'" class="preview-img">'; } }
+  function resetMeasurementForm(){ ['measure-location','width','height'].forEach(id=>document.getElementById(id).value=''); const file=document.getElementById('windowPhoto'); if(file) file.value=''; windowPhotoData=null; document.getElementById('windowPreview').innerHTML=''; }
+
+  // ====== القياسات ======
   function addMeasurement(){
     const loc=(document.getElementById("measure-location").value||'').trim();
     const w=parseFloat(document.getElementById("width").value)||0;
@@ -320,10 +319,7 @@
       calcCurtainPriceForIndex(currentFabricIndex);
     }
   }
-  function startFabricAssignment(){
-    if(!curtains.length){ alert("أضف قياسًا واحدًا على الأقل أولاً."); return; }
-    currentFabricIndex=0; loadFabricForm(); goto('page-fabrics'); setStep('fabric');
-  }
+  function startFabricAssignment(){ if(!curtains.length){ alert("أضف قياسًا واحدًا على الأقل أولاً."); return; } currentFabricIndex=0; loadFabricForm(); goto('page-fabrics'); setStep('fabric'); }
   function loadFabricForm(){
     const c=curtains[currentFabricIndex];
     document.getElementById("fabricHeader").innerText='ستارة '+(currentFabricIndex+1)+' من '+curtains.length;
@@ -338,7 +334,6 @@
     document.getElementById("total").innerText = c.total ? Number(c.total).toFixed(2) : "0";
     document.getElementById("codeChiffon").value = c.codeChiffon || "";
     document.getElementById("codeBlackout").value = c.codeBlackout || "";
-    // previews
     chiffonPhotoData = c.chiffonPhoto || null; blackoutPhotoData = c.blackoutPhoto || null;
     document.getElementById('chiffonPreview').innerHTML = c.chiffonPhoto?'<img src="'+c.chiffonPhoto+'" class="preview-img">':'';
     document.getElementById('blackoutPreview').innerHTML = c.blackoutPhoto?'<img src="'+c.blackoutPhoto+'" class="preview-img">':'';
@@ -389,40 +384,16 @@
   }
   function updateTotal(){ const total=parseFloat(txt('sumTotal'))||0; const discount=parseFloat(val('discount'))||0; document.getElementById('sumAfterDiscount').innerText=(total-discount).toFixed(2); }
 
-  // ====== تحقّق قبل الحفظ + ضغط إضافي إن لزم (حل مشكلة الكوتا) ======
+  // ====== الحفظ (يضغط الصور قبل التخزين) ======
   function canSave(){
     if(!curtains.length){ alert('أضف ستارة واحدة على الأقل قبل الحفظ.'); return false; }
-    for(let i=0;i<curtains.length;i++){
-      const c=curtains[i];
-      if(!c.fabric){ alert('اختر القماش لكل الستائر قبل الحفظ. ستارة رقم: '+(i+1)); return false; }
-    }
+    for(let i=0;i<curtains.length;i++){ if(!curtains[i].fabric){ alert('اختر القماش لكل الستائر قبل الحفظ. ستارة رقم: '+(i+1)); return false; } }
     return true;
   }
-
   async function compressAllCurtainImages(extra=false){
-    // في حال بقي الحجم كبير، نقلل الجودة والأبعاد قليلاً
-    const maxW = extra ? 900 : MAX_IMG_W;
-    const maxH = extra ? 700 : MAX_IMG_H;
-    const q    = extra ? JPEG_QUALITY_FALLBACK : JPEG_QUALITY;
-
-    async function resizeDataURLIfNeeded(dataURL){
-      if(!dataURL) return null;
-      // إذا هي أصلاً dataURL سنرسمها على كانفس ونُعيد ترميزها بجودة أقل/حجم أصغر
-      const img = await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=dataURL; });
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
-      const w = Math.round(img.width * ratio), h = Math.round(img.height * ratio);
-      canvas.width = w; canvas.height = h;
-      ctx.drawImage(img, 0, 0, w, h);
-      return canvas.toDataURL('image/jpeg', q);
-    }
-
-    for(const c of curtains){
-      c.windowPhoto   = await resizeDataURLIfNeeded(c.windowPhoto);
-      c.chiffonPhoto  = await resizeDataURLIfNeeded(c.chiffonPhoto);
-      c.blackoutPhoto = await resizeDataURLIfNeeded(c.blackoutPhoto);
-    }
+    const maxW = extra ? 900 : MAX_IMG_W, maxH = extra ? 700 : MAX_IMG_H, q = extra ? JPEG_QUALITY_FALLBACK : JPEG_QUALITY;
+    async function resizeDataURL(dataURL){ if(!dataURL) return null; const img=await new Promise((r,j)=>{ const im=new Image(); im.onload=()=>r(im); im.onerror=j; im.src=dataURL; }); const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d'); const ratio=Math.min(maxW/img.width, maxH/img.height, 1); const w=Math.round(img.width*ratio), h=Math.round(img.height*ratio); canvas.width=w; canvas.height=h; ctx.drawImage(img,0,0,w,h); return canvas.toDataURL('image/jpeg', q); }
+    for(const c of curtains){ c.windowPhoto=await resizeDataURL(c.windowPhoto); c.chiffonPhoto=await resizeDataURL(c.chiffonPhoto); c.blackoutPhoto=await resizeDataURL(c.blackoutPhoto); }
   }
 
   let saving=false;
@@ -433,27 +404,17 @@
       saving=true;
       const btn=document.getElementById('btnSave'); if(btn){ btn.disabled=true; btn.textContent='... جارٍ الحفظ'; }
 
-      // الضغط قبل الحفظ
       await compressAllCurtainImages(false);
 
-      const client={
-        name:val('name'), phone:val('phone'), address:val('address'), date:val('date'), notes:val('notes'),
-        curtains:curtains, total:txt('sumTotal'), discount:val('discount'), afterDiscount:txt('sumAfterDiscount'),
-        savedAt: new Date().toISOString()
-      };
+      const client={ name:val('name'), phone:val('phone'), address:val('address'), date:val('date'), notes:val('notes'),
+        curtains:curtains, total:txt('sumTotal'), discount:val('discount'), afterDiscount:txt('sumAfterDiscount'), savedAt:new Date().toISOString() };
 
       const orders=getOrders(); orders.push(client);
-      try{
-        setOrders(orders);
-      }catch(err){
-        // في حال كوتا، نضغط أكثر ونعيد المحاولة
-        console.warn('Quota error, trying stronger compression...', err);
-        await compressAllCurtainImages(true);
-        orders[orders.length-1].curtains = curtains;
-        setOrders(orders);
-      }
+      try{ setOrders(orders); }
+      catch(err){ console.warn('Quota error, retry with stronger compression...', err); await compressAllCurtainImages(true); orders[orders.length-1].curtains=curtains; setOrders(orders); }
 
       alert('تم حفظ الطلب ✅');
+      resetSession();
       viewOrder(orders.length-1);
       saving=false; if(btn){ btn.disabled=false; btn.textContent='💾 حفظ'; }
     }catch(e){
@@ -493,7 +454,7 @@
     html+='<div class="hr"></div><div class="row"><div><b>الإجمالي:</b> '+escapeHtml(o.total||'0')+' درهم</div><div><b>الخصم:</b> '+escapeHtml(o.discount||'0')+' درهم</div><div><b>بعد الخصم:</b> '+escapeHtml(o.afterDiscount||o.total||'0')+' درهم</div></div>';
     document.getElementById("viewOrderContent").innerHTML=html;
     document.getElementById("editButton").onclick=()=>editOrder(i);
-    document.getElementById("deleteButton").onclick=()=>{ deleteOrder(i); goto('page-home'); };
+    document.getElementById("deleteButton").onclick=()=>{ deleteOrder(i); goHome(); };
     goto('page-view-order'); setStep(null);
   }
 
@@ -567,16 +528,14 @@
   function removeCurtainInEdit(idx){ if(confirm('حذف هذه الستارة؟')){ editOrderObject.curtains.splice(idx,1); renderEditOrder(); } }
   function saveEditedOrder(){
     const orders=getOrders();
-    // recompute totals
     let totalPrice=0,totalVAT=0; (editOrderObject.curtains||[]).forEach(c=>{ totalPrice+=(+c.price||0); totalVAT+=(+c.vat||0); });
     editOrderObject.total=(totalPrice+totalVAT).toFixed(2);
     if(!editOrderObject.afterDiscount) editOrderObject.afterDiscount=editOrderObject.total;
     orders[selectedOrderIndex]=editOrderObject; setOrders(orders);
     alert('تم حفظ التعديلات ✅'); viewOrder(selectedOrderIndex);
   }
-  function cancelEdit(){ viewOrder(selectedOrderIndex); }
 
-  // ====== PDF مُحسّن (مسافات أكبر لمنع تداخل) ======
+  // ====== PDF مُحسّن (مسافات أكبر) ======
   function getFabricOnly(txt){ if(!txt) return ''; if(txt.includes('Velvet')) return 'Velvet with Chiffon'; if(txt.includes('Blackout')) return 'Blackout with Chiffon'; if(txt.includes('Chiffon')) return 'Chiffon'; return txt; }
   window.generatePDF = async function () {
     try{
@@ -584,18 +543,15 @@
       const doc = new window.jspdf.jsPDF("p","mm","a4");
       const W=210, M=14, CONTENT=W-2*M; let y = 16;
       const LINE = 6;
-      const IMG_W=44, IMG_H=32, LABEL_GAP=4, ROW_GAP=16; // <-- مسافات أكبر هنا
-      const HEADER_GAP=8; // فراغ قبل عناوين الأقسام
+      const IMG_W=44, IMG_H=32, LABEL_GAP=4, ROW_GAP=16, HEADER_GAP=8;
 
       function ensurePage(extra=0){ if(y+extra>290){ doc.addPage(); y=16; } }
       function writeBlock(text){ const lines=doc.splitTextToSize(text, CONTENT); lines.forEach(ln=>{ ensurePage(LINE); doc.text(ln, M, y); y+=LINE; }); }
 
-      // Logo
       const logo = new Image(); logo.src = "https://i.postimg.cc/L4QwkTxg/LOGO23333.png"; await new Promise(res=>logo.onload=res);
       const ratio = logo.width / logo.height, h=18, w=ratio*h, x=(W-w)/2;
       doc.addImage(logo,"PNG",x,y,w,h); y += h + 4;
 
-      // Client
       doc.setFontSize(11);
       writeBlock("Client Name: " + (val('name')||""));
       writeBlock("Phone: " + (val('phone')||""));
@@ -603,21 +559,15 @@
       writeBlock("Visit Date: " + (val('date')||""));
       const notes=val('notes'); if(notes){ writeBlock("Notes: " + notes); }
 
-      // Title
       ensurePage(HEADER_GAP+8); doc.setFontSize(14); doc.text("Order Summary", W/2, y+HEADER_GAP/2, {align:"center"}); y+=HEADER_GAP+6;
 
-      // Table
       const head=[["Location","Width","Height","Fabric","Chiffon Code","Blackout Code","Price (AED)"]];
       const rows=[];
       let totalPrice=0,totalVAT=0;
-      curtains.forEach(c=>{
-        totalPrice+=(+c.price||0); totalVAT+=(+c.vat||0);
-        rows.push([c.location||"", String(c.width||""), String(c.height||""), getFabricOnly(c.fabric||""), c.codeChiffon||"", c.codeBlackout||"", (c.total||"0")+" AED"]);
-      });
+      curtains.forEach(c=>{ totalPrice+=(+c.price||0); totalVAT+=(+c.vat||0); rows.push([c.location||"", String(c.width||""), String(c.height||""), getFabricOnly(c.fabric||""), c.codeChiffon||"", c.codeBlackout||"", (c.total||"0")+" AED"]); });
       doc.autoTable({head:head, body:rows, startY:y, styles:{fontSize:9, cellPadding:1.5}, headStyles:{fillColor:[181,142,0]}, margin:{left:M, right:M}});
       y = doc.lastAutoTable.finalY + HEADER_GAP;
 
-      // Images grid (مع فراغ أكبر بين الصفوف والترويسات)
       for(let i=0;i<curtains.length;i++){
         const c=curtains[i];
         ensurePage(IMG_H + LABEL_GAP + ROW_GAP + 8);
@@ -632,10 +582,9 @@
         await add(c.windowPhoto, M, "Window");
         await add(c.chiffonPhoto, M+IMG_W+4, "Chiffon");
         await add(c.blackoutPhoto, M+(IMG_W+4)*2, "Blackout");
-        y += IMG_H + LABEL_GAP + ROW_GAP; // <-- فراغ إضافي كبير بعد صف الصور
+        y += IMG_H + LABEL_GAP + ROW_GAP;
       }
 
-      // Totals (مع مسافة قبلها)
       y += HEADER_GAP;
       ensurePage(4*LINE + 8);
       doc.setFontSize(11);
@@ -643,12 +592,8 @@
       writeBlock("VAT (5%): " + totalVAT.toFixed(2) + " AED");
       writeBlock("Final Total: " + (totalPrice+totalVAT).toFixed(2) + " AED");
       const disc=parseFloat(val('discount')||'0')||0;
-      if(disc>0){
-        writeBlock("Discount: -" + disc.toFixed(2) + " AED");
-        writeBlock("Total After Discount: " + (totalPrice+totalVAT-disc).toFixed(2) + " AED");
-      }
+      if(disc>0){ writeBlock("Discount: -" + disc.toFixed(2) + " AED"); writeBlock("Total After Discount: " + (totalPrice+totalVAT-disc).toFixed(2) + " AED"); }
 
-      // Terms
       y += 4;
       ensurePage(6*LINE + 8);
       doc.setFontSize(10); writeBlock("Payment Terms:");
