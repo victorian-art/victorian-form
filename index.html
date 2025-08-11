@@ -1,1112 +1,685 @@
-
 <!DOCTYPE html>
-
 <html dir="rtl" lang="ar">
 <head>
-<meta charset="utf-8"/>
-<title>تطبيق ستائر متعدد - Victorian Art</title>
-<meta content="width=device-width, initial-scale=1" name="viewport"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-function updateTotal() {
-  const total = parseFloat(document.getElementById("sumTotal").innerText) || 0;
-  const discount = parseFloat(document.getElementById("discount").value) || 0;
-  const final = total - discount;
-  document.getElementById("sumAfterDiscount").innerText = final.toFixed(2);
-}
-
-window.onload = function () {
-  document.querySelectorAll('.container').forEach(div => div.classList.add('hidden'));
-  document.getElementById('page-home').classList.remove('hidden');
-};
-
-function saveOrder() {
-  const client = {
-    name: document.getElementById("name").value,
-    phone: document.getElementById("phone").value,
-    address: document.getElementById("address").value,
-    date: document.getElementById("date").value,
-    notes: document.getElementById("notes").value,
-    curtains: curtains,
-    total: document.getElementById("sumTotal").innerText,
-    discount: document.getElementById("discount").value,
-    afterDiscount: document.getElementById("sumAfterDiscount").innerText
-  };
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  orders.push(client);
-  localStorage.setItem("curtainOrders", JSON.stringify(orders));
-  alert("تم حفظ الطلب بنجاح ✅");
-  next('page-summary','page-home');
-}
-
-function showOrders() {
-
-let selectedOrderIndex = null;
-
-function viewOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  const o = orders[index];
-  selectedOrderIndex = index;
-
-  let html = `
-    <p><strong>الاسم:</strong> ${o.name}</p>
-    <p><strong>الهاتف:</strong> ${o.phone}</p>
-    <p><strong>العنوان:</strong> ${o.address}</p>
-    <p><strong>تاريخ الزيارة:</strong> ${o.date}</p>
-    <p><strong>ملاحظات:</strong> ${o.notes}</p>
-    <hr />
-  `;
-
-  o.curtains.forEach((curtain, i) => {
-    html += `
-      <div class="curtain-summary">
-        <h3>ستارة ${i + 1} (${curtain.location})</h3>
-        <p><strong>العرض:</strong> ${curtain.width} سم</p>
-        <p><strong>الارتفاع:</strong> ${curtain.height} سم</p>
-        <p><strong>نوع القماش:</strong> ${curtain.fabric}</p>
-        <p><strong>كود الشيفون:</strong> ${curtain.codeChiffon}</p>
-        <p><strong>كود البلاك أوت/مخمل:</strong> ${curtain.codeBlackout}</p>
-        <p><strong>السعر:</strong> ${curtain.price} درهم + ${curtain.vat} VAT = ${curtain.total} درهم</p>
-      </div>
-    `;
-  });
-
-  html += `
-    <hr/>
-    <p><strong>الإجمالي:</strong> ${o.total} درهم</p>
-    <p><strong>الخصم:</strong> ${o.discount} درهم</p>
-    <p><strong>بعد الخصم:</strong> ${o.afterDiscount} درهم</p>
-  `;
-
-  document.getElementById("viewOrderContent").innerHTML = html;
-
-  document.getElementById("editButton").onclick = function () {
-    editOrder(selectedOrderIndex);
-  };
-  document.getElementById("deleteButton").onclick = function () {
-    deleteOrder(selectedOrderIndex);
-    next('page-view-order','page-home');
-  };
-
-  next('page-orders','page-view-order');
-}
-
-
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  let html = "";
-
-  if (orders.length === 0) {
-    html = "<p>لا توجد طلبات محفوظة.</p>";
-  } else {
-    orders.forEach((o, index) => {
-      html += `
-        <div class="order-summary">
-          <p><strong>${o.name}</strong> - ${o.date}</p>
-          <p>الإجمالي: ${o.total} درهم</p>
-          <button onclick='viewOrder(${index})'>👁️ عرض</button>
-          <button onclick="deleteOrder(${index})">🗑️ حذف</button>
-          <hr/>
-        </div>
-      `;
-    });
-  }
-
-  document.getElementById("ordersList").innerHTML = html;
-  next('page-home','page-orders');
-}
-
-function deleteOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  if (confirm("هل أنت متأكد من حذف هذا الطلب؟")) {
-    orders.splice(index, 1);
-    localStorage.setItem("curtainOrders", JSON.stringify(orders));
-    showOrders();
-  }
-}
-
-function editOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  const o = orders[index];
-
-  document.getElementById("name").value = o.name;
-  document.getElementById("phone").value = o.phone;
-  document.getElementById("address").value = o.address;
-  document.getElementById("date").value = o.date;
-  document.getElementById("notes").value = o.notes;
-  document.getElementById("discount").value = o.discount || 0;
-  curtains = o.curtains || [];
-  showSummary();
-}
-
-</script>
-<style>
-    body { font-family: 'Amiri', serif; background: #f7f7f7; padding: 20px; margin: 0; }
-    .container { background: white; padding: 20px; border-radius: 15px; max-width: 700px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    h2, h3 { text-align: center; margin-top: 0; }
-    label { margin-top: 10px; display: block; font-weight: bold; }
-    input, select, textarea {
-      width: 100%; padding: 8px; margin-top: 5px;
-      border-radius: 6px; border: 1px solid #ccc;
+  <meta charset="utf-8"/>
+  <title>تطبيق ستائر — (مسافات PDF + ضغط الصور للحفظ)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --brand:#b58e00; --brand-dark:#8e6c00;
+      --bg:#f7f7f7; --card:#fff; --muted:#666; --border:#e5e7eb;
     }
-    .btn, .btns button {
-      padding: 10px 20px; border: none; border-radius: 6px;
-      background-color: #b58e00; color: white; cursor: pointer;
-      margin-top: 15px;
-    }
-    .btn:hover, .btns button:hover { background-color: #8e6c00; }
+    *{box-sizing:border-box}
+    body { font-family: system-ui, -apple-system, "Segoe UI", Arial, "Noto Kufi Arabic", "Amiri", sans-serif; background: var(--bg); padding: 20px; margin: 0; color:#111; }
+    .container { background: var(--card); padding: 20px; border-radius: 14px; max-width: 900px; margin: 12px auto; box-shadow: 0 6px 24px rgba(0,0,0,.06); }
+    h1,h2,h3 { margin: 0 0 12px }
+    h2 { text-align: center; }
+    label { margin-top: 10px; display: block; font-weight: 600; }
+    input, select, textarea { width: 100%; padding: 10px; margin-top: 6px; border-radius: 10px; border: 1px solid var(--border); background:#fff; }
+    textarea{min-height:90px}
+    .btns { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+    .btn { padding: 10px 16px; border: none; border-radius: 10px; background-color: var(--brand); color: white; cursor: pointer; font-weight:600; }
+    .btn.secondary { background:#4b5563; }
+    .btn.ghost { background:#fff; color:#111; border:1px solid var(--border) }
+    .btn:hover { filter: brightness(.97); }
     .hidden { display: none; }
-    .price-output { margin-top: 10px; font-weight: bold; color: #333; }
-    #totalBox {
-      background: #f1f1f1; padding: 15px; margin-top: 20px;
-      border-radius: 10px; font-size: 18px;
-    }
-    .curtain-summary { border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px; }
-    img.preview-img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
-  
-.fabric-row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-  gap: 6px;
-}
-.fabric-btn {
-  display: inline-block;
-  margin: 6px 4px;
-  padding: 10px 14px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #f0f0f0;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-.fabric-btn:hover {
-  background: #e0e0e0;
-}
-.fabric-btn.selected {
-  background: #b58e00;
-  color: white;
-  border-color: #8e6c00;
-}
-
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-function updateTotal() {
-  const total = parseFloat(document.getElementById("sumTotal").innerText) || 0;
-  const discount = parseFloat(document.getElementById("discount").value) || 0;
-  const final = total - discount;
-  document.getElementById("sumAfterDiscount").innerText = final.toFixed(2);
-}
-
-window.onload = function () {
-  document.querySelectorAll('.container').forEach(div => div.classList.add('hidden'));
-  document.getElementById('page-home').classList.remove('hidden');
-};
-
-function saveOrder() {
-  const client = {
-    name: document.getElementById("name").value,
-    phone: document.getElementById("phone").value,
-    address: document.getElementById("address").value,
-    date: document.getElementById("date").value,
-    notes: document.getElementById("notes").value,
-    curtains: curtains,
-    total: document.getElementById("sumTotal").innerText,
-    discount: document.getElementById("discount").value,
-    afterDiscount: document.getElementById("sumAfterDiscount").innerText
-  };
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  orders.push(client);
-  localStorage.setItem("curtainOrders", JSON.stringify(orders));
-  alert("تم حفظ الطلب بنجاح ✅");
-  next('page-summary','page-home');
-}
-
-function showOrders() {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  let html = "";
-
-  if (orders.length === 0) {
-    html = "<p>لا توجد طلبات محفوظة.</p>";
-  } else {
-    orders.forEach((o, index) => {
-      html += `
-        <div class="order-summary">
-          <p><strong>${o.name}</strong> - ${o.date}</p>
-          <p>الإجمالي: ${o.total} درهم</p>
-          <button onclick='viewOrder(${index})'>👁️ عرض</button>
-          <button onclick="deleteOrder(${index})">🗑️ حذف</button>
-          <hr/>
-        </div>
-      `;
-    });
-  }
-
-  document.getElementById("ordersList").innerHTML = html;
-  next('page-home','page-orders');
-}
-
-function deleteOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  if (confirm("هل أنت متأكد من حذف هذا الطلب؟")) {
-    orders.splice(index, 1);
-    localStorage.setItem("curtainOrders", JSON.stringify(orders));
-    showOrders();
-  }
-}
-
-function editOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  const o = orders[index];
-
-  document.getElementById("name").value = o.name;
-  document.getElementById("phone").value = o.phone;
-  document.getElementById("address").value = o.address;
-  document.getElementById("date").value = o.date;
-  document.getElementById("notes").value = o.notes;
-  document.getElementById("discount").value = o.discount || 0;
-  curtains = o.curtains || [];
-  showSummary();
-}
-
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js">
-function updateTotal() {
-  const total = parseFloat(document.getElementById("sumTotal").innerText) || 0;
-  const discount = parseFloat(document.getElementById("discount").value) || 0;
-  const final = total - discount;
-  document.getElementById("sumAfterDiscount").innerText = final.toFixed(2);
-}
-
-window.onload = function () {
-  document.querySelectorAll('.container').forEach(div => div.classList.add('hidden'));
-  document.getElementById('page-home').classList.remove('hidden');
-};
-
-function saveOrder() {
-  const client = {
-    name: document.getElementById("name").value,
-    phone: document.getElementById("phone").value,
-    address: document.getElementById("address").value,
-    date: document.getElementById("date").value,
-    notes: document.getElementById("notes").value,
-    curtains: curtains,
-    total: document.getElementById("sumTotal").innerText,
-    discount: document.getElementById("discount").value,
-    afterDiscount: document.getElementById("sumAfterDiscount").innerText
-  };
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  orders.push(client);
-  localStorage.setItem("curtainOrders", JSON.stringify(orders));
-  alert("تم حفظ الطلب بنجاح ✅");
-  next('page-summary','page-home');
-}
-
-function showOrders() {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  let html = "";
-
-  if (orders.length === 0) {
-    html = "<p>لا توجد طلبات محفوظة.</p>";
-  } else {
-    orders.forEach((o, index) => {
-      html += `
-        <div class="order-summary">
-          <p><strong>${o.name}</strong> - ${o.date}</p>
-          <p>الإجمالي: ${o.total} درهم</p>
-          <button onclick='viewOrder(${index})'>👁️ عرض</button>
-          <button onclick="deleteOrder(${index})">🗑️ حذف</button>
-          <hr/>
-        </div>
-      `;
-    });
-  }
-
-  document.getElementById("ordersList").innerHTML = html;
-  next('page-home','page-orders');
-}
-
-function deleteOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  if (confirm("هل أنت متأكد من حذف هذا الطلب؟")) {
-    orders.splice(index, 1);
-    localStorage.setItem("curtainOrders", JSON.stringify(orders));
-    showOrders();
-  }
-}
-
-function editOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  const o = orders[index];
-
-  document.getElementById("name").value = o.name;
-  document.getElementById("phone").value = o.phone;
-  document.getElementById("address").value = o.address;
-  document.getElementById("date").value = o.date;
-  document.getElementById("notes").value = o.notes;
-  document.getElementById("discount").value = o.discount || 0;
-  curtains = o.curtains || [];
-  showSummary();
-}
-
-</script>
-<link href="manifest.json" rel="manifest"/>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js')
-      .then(() => console.log("Service Worker Registered"));
-  }
-
-window.onload = function () {
-  document.querySelectorAll('.container').forEach(div => div.classList.add('hidden'));
-  document.getElementById('page-home').classList.remove('hidden');
-};
-
-function saveOrder() {
-  const client = {
-    name: document.getElementById("name").value,
-    phone: document.getElementById("phone").value,
-    address: document.getElementById("address").value,
-    date: document.getElementById("date").value,
-    notes: document.getElementById("notes").value,
-    curtains: curtains,
-    total: document.getElementById("sumTotal").innerText,
-    discount: document.getElementById("discount").value,
-    afterDiscount: document.getElementById("sumAfterDiscount").innerText
-  };
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  orders.push(client);
-  localStorage.setItem("curtainOrders", JSON.stringify(orders));
-  alert("تم حفظ الطلب بنجاح ✅");
-  next('page-summary','page-home');
-}
-
-function showOrders() {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  let html = "";
-
-  if (orders.length === 0) {
-    html = "<p>لا توجد طلبات محفوظة.</p>";
-  } else {
-    orders.forEach((o, index) => {
-      html += `
-        <div class="order-summary">
-          <p><strong>${o.name}</strong> - ${o.date}</p>
-          <p>الإجمالي: ${o.total} درهم</p>
-          <button onclick='viewOrder(${index})'>👁️ عرض</button>
-          <button onclick="deleteOrder(${index})">🗑️ حذف</button>
-          <hr/>
-        </div>
-      `;
-    });
-  }
-
-  document.getElementById("ordersList").innerHTML = html;
-  next('page-home','page-orders');
-}
-
-function deleteOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  if (confirm("هل أنت متأكد من حذف هذا الطلب؟")) {
-    orders.splice(index, 1);
-    localStorage.setItem("curtainOrders", JSON.stringify(orders));
-    showOrders();
-  }
-}
-
-function editOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  const o = orders[index];
-
-  document.getElementById("name").value = o.name;
-  document.getElementById("phone").value = o.phone;
-  document.getElementById("address").value = o.address;
-  document.getElementById("date").value = o.date;
-  document.getElementById("notes").value = o.notes;
-  document.getElementById("discount").value = o.discount || 0;
-  curtains = o.curtains || [];
-  showSummary();
-}
-
-</script>
+    .list { background:#fafafa; border:1px dashed var(--border); border-radius:10px; padding:12px; margin-top:10px }
+    .row{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px}
+    .pill { display:inline-block; background:#eee; padding:4px 10px; border-radius:999px; margin:4px 6px 0 0; font-size:12px }
+    .curtain-summary { border:1px solid var(--border); padding:10px; border-radius:10px; margin:8px 0; background:#fff }
+    img.preview-img { max-width: 100%; border-radius: 10px; margin-top: 10px; border:1px solid var(--border) }
+    .fabric-row { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+    .fabric-btn { padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#f8f8f8; cursor:pointer }
+    .fabric-btn.selected { background:var(--brand); color:#fff; border-color:var(--brand-dark) }
+    .hr{height:1px;background:var(--border);margin:10px 0}
+    .total-box { background:#f1f1f1; padding:12px; border-radius:10px }
+    .del{background:#ef4444;color:#fff}
+    /* Stepper */
+    .stepper{display:flex;justify-content:space-between;gap:10px;margin:-4px auto 14px;max-width:900px}
+    .step{flex:1;display:flex;align-items:center;gap:10px}
+    .dot{width:26px;height:26px;border-radius:50%;background:#ddd;color:#555;display:flex;align-items:center;justify-content:center;font-weight:700}
+    .step.active .dot{background:var(--brand);color:#fff}
+    .step .label{font-size:13px;color:#555;font-weight:700}
+    .step.active .label{color:#111}
+  </style>
+  <!-- jsPDF + AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-<div class="container" id="page-home">
-<h2>WELCOME V FURNITURE</h2>
-<div class="btns">
-<button onclick="showOrders()">📋 الطلبات السابقة</button>
-<button onclick="next('page-home','page-client')">➕ طلب جديد</button>
-</div>
-</div>
-<div class="container hidden" id="page-orders">
-<h2>📋 الطلبات السابقة</h2>
-<div id="ordersList"></div>
-<div class="btns">
-<button onclick="next('page-orders','page-home')">🔙 رجوع</button>
-</div>
-</div>
-<div class="container" id="page-client">
-<h2>بيانات العميل / Client Info</h2>
-<label>الاسم / Name</label><input id="name"/>
-<label>الهاتف / Phone</label><input id="phone"/>
-<label>العنوان / Address</label><textarea id="address"></textarea>
-<label>تاريخ الزيارة / Visit Date</label><input id="date" type="date"/>
-<div class="btns"><button onclick="next('page-client','page-location')">التالي</button></div>
-</div>
-<div class="container hidden" id="page-location">
-<h2>موقع الستارة / Curtain Location</h2>
-<label>موقع الستارة / Curtain Location (e.g., Living Room, Bedroom...)</label>
-<input id="curtain-location"/>
-<div class="btns">
-<button onclick="next('page-location','page-client', true)">عودة</button>
-<button onclick="next('page-location','page-details')">التالي</button>
-</div>
-</div>
-<div class="container hidden" id="page-details">
-<h2>قياسات النافذة / Window Measurements</h2>
-<label>العرض (سم) / Width (cm)</label>
-<input id="width" oninput="calcCurtainPrice()" type="number"/>
-<label>الارتفاع (سم) / Height (cm)</label>
-<input id="height" oninput="calcCurtainPrice()" type="number"/>
-<label>صورة النافذة / Window Photo</label>
-<input accept="image/*" capture="environment" id="windowPhoto" onchange="previewWindowPhoto(event)" type="file"/>
-<div id="windowPreview"></div>
-<label>نوع القماش / Fabric Type</label>
-<div id="fabricButtonsContainer">
-<div class="fabric-row">
-<button class="fabric-btn" data-label="Chiffon - 70 AED / شيفون" data-price="70" type="button">Chiffon - 70 AED / شيفون</button>
-<button class="fabric-btn" data-label="Chiffon Wavy - 90 AED / شيفون ويفي" data-price="90" type="button">Chiffon Wavy - 90 AED / شيفون ويفي</button>
-</div>
-<div class="fabric-row">
-<button class="fabric-btn" data-label="Velvet - 90 AED / مخمل" data-price="90" type="button">Velvet - 90 AED / مخمل</button>
-<button class="fabric-btn" data-label="Velvet Wavy - 100 AED / مخمل ويفي" data-price="100" type="button">Velvet Wavy - 100 AED / مخمل ويفي</button>
-<button class="fabric-btn" data-label="Velvet with Chiffon - 110 AED / مخمل مع شيفون" data-price="110" type="button">Velvet with Chiffon - 110 AED / مخمل مع شيفون</button>
-<button class="fabric-btn" data-label="Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون" data-price="130" type="button">Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون</button>
-</div>
-<div class="fabric-row">
-<button class="fabric-btn" data-label="Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي" data-price="120" type="button">Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي</button>
-<button class="fabric-btn" data-label="Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي" data-price="150" type="button">Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي</button>
-</div>
-<div class="fabric-row">
-<button class="fabric-btn" data-label="Blackout - 120 AED / بلاك اوت" data-price="120" type="button">Blackout - 120 AED / بلاك اوت</button>
-<button class="fabric-btn" data-label="Blackout Wavy - 135 AED / بلاك اوت ويفي" data-price="135" type="button">Blackout Wavy - 135 AED / بلاك اوت ويفي</button>
-<button class="fabric-btn" data-label="Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون" data-price="150" type="button">Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون</button>
-<button class="fabric-btn" data-label="Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون" data-price="185" type="button">Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون</button>
-</div>
-<div class="fabric-row">
-<button class="fabric-btn" data-label="Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي" data-price="170" type="button">Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي</button>
-<button class="fabric-btn" data-label="Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي" data-price="200" type="button">Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي</button>
-</div>
-<div class="fabric-row">
-<button class="fabric-btn" data-label="Roll-up - 120 AED / رول اب" data-price="120" type="button">Roll-up - 120 AED / رول اب</button>
-</div>
-</div>
-<input id="fabric" type="hidden"/>
-<div class="price-output">السعر: <span id="price">0</span> درهم + <span id="vat">0</span> VAT = <span id="total">0</span> درهم</div>
-<div class="btns">
-<button onclick="next('page-details','page-location', true)">عودة</button>
-<button onclick="next('page-details','page-fabric-photo')">التالي</button>
-</div>
-</div>
-<div class="container hidden" id="page-fabric-photo">
-<h2>تفاصيل القماش / Fabric Details</h2>
-<label>كود قماش الشيفون / Chiffon Code</label>
-<input id="codeChiffon" placeholder="مثال: CH-123"/>
-<label>صورة قماش الشيفون / Chiffon Photo</label>
-<input accept="image/*" capture="environment" id="photoChiffon" onchange="previewFabricPhoto(event,'chiffonPreview')" type="file"/>
-<div id="chiffonPreview"></div>
-<label>كود قماش البلاك أوت / مخمل / Blackout or Velvet Code</label>
-<input id="codeBlackout" placeholder="مثال: BO-456"/>
-<label>صورة قماش البلاك أوت / مخمل / Blackout or Velvet Photo</label>
-<input accept="image/*" capture="environment" id="photoBlackout" onchange="previewFabricPhoto(event,'blackoutPreview')" type="file"/>
-<div id="blackoutPreview"></div>
-<div class="btns">
-<button onclick="next('page-fabric-photo','page-details', true)">عودة</button>
-<button onclick="saveCurtain()">التالي</button>
-</div>
-</div>
-<div class="container hidden" id="page-choice">
-<h2>ماذا تريد؟ / What do you want?</h2>
-<div class="btns">
-<button onclick="next('page-choice','page-location'); resetCurtainForm();">➕ إضافة ستارة أخرى</button>
-<button onclick="showSummary()">✅ الذهاب إلى الملخص</button>
-</div>
-</div>
-<div class="container hidden" id="page-summary">
-<h2>ملخص الطلب / Order Summary</h2>
-<div id="summaryContent"></div>
-<label>ملاحظات / Notes</label>
-<textarea id="notes" placeholder="اكتب ملاحظاتك هنا / Add any notes here..."></textarea>
-<br/>
-<div id="totalBox">
-<p>الإجمالي بدون VAT: <span id="sumPrice">0</span> درهم</p>
-<p>إجمالي VAT (5%): <span id="sumVAT">0</span> درهم</p>
-<p><strong>الإجمالي النهائي: <span id="sumTotal">0</span> درهم</strong></p>
-<p>الخصم / Discount: <input id="discount" oninput="updateTotal()" placeholder="0" style="width:100px" type="number"/> درهم</p>
-<p><strong>الإجمالي بعد الخصم: <span id="sumAfterDiscount">0</span> درهم</strong></p>
-</div>
-<div class="btns">
-<button onclick="window.generatePDF()">تحميل PDF</button>
-<button onclick="saveOrder()">💾 حفظ</button>
-<button onclick="sendToWhatsApp()">إرسال واتساب</button>
-</div>
-</div>
+  <!-- Stepper -->
+  <div class="stepper">
+    <div class="step" id="st-client"><div class="dot">1</div><div class="label">العميل</div></div>
+    <div class="step" id="st-measure"><div class="dot">2</div><div class="label">القياسات</div></div>
+    <div class="step" id="st-fabric"><div class="dot">3</div><div class="label">القماش</div></div>
+    <div class="step" id="st-summary"><div class="dot">4</div><div class="label">الملخص</div></div>
+  </div>
+
+  <!-- الصفحة الرئيسية -->
+  <div class="container" id="page-home">
+    <h2>WELCOME V FURNITURE</h2>
+    <div class="btns">
+      <button type="button" class="btn" onclick="showOrders()">📋 الطلبات السابقة</button>
+      <button type="button" class="btn" onclick="goto('page-client'); setStep('client')">➕ طلب جديد</button>
+    </div>
+  </div>
+
+  <!-- الطلبات السابقة -->
+  <div class="container hidden" id="page-orders">
+    <h2>📋 الطلبات السابقة</h2>
+    <div id="ordersList"></div>
+    <div class="btns">
+      <button type="button" class="btn secondary" onclick="goto('page-home'); setStep(null)">🔙 رجوع</button>
+    </div>
+  </div>
+
+  <!-- بيانات العميل -->
+  <div class="container hidden" id="page-client">
+    <h2>بيانات العميل / Client Info</h2>
+    <div class="row">
+      <div><label>الاسم / Name</label><input id="name"/></div>
+      <div><label>الهاتف / Phone</label><input id="phone"/></div>
+    </div>
+    <label>العنوان / Address</label><textarea id="address"></textarea>
+    <div class="row">
+      <div><label>تاريخ الزيارة / Visit Date</label><input id="date" type="date"/></div>
+    </div>
+    <div class="btns">
+      <button type="button" class="btn secondary" onclick="goto('page-home'); setStep(null)">عودة</button>
+      <button type="button" class="btn" onclick="goto('page-details'); setStep('measure')">التالي</button>
+    </div>
+  </div>
+
+  <!-- القياسات أولاً -->
+  <div class="container hidden" id="page-details">
+    <h2>قياسات النوافذ / Window Measurements</h2>
+    <div class="list">
+      <div><span class="pill">1</span> أضف موقع كل ستارة + العرض + الارتفاع + صورة.</div>
+      <div><span class="pill">2</span> بعد الانتهاء اضغط "اختيار القماش" للانتقال لمرحلة الأقمشة.</div>
+    </div>
+
+    <div class="row">
+      <div><label>الموقع / Location</label><input id="measure-location" placeholder="مثال: صالة، غرفة نوم..."></div>
+      <div><label>العرض (سم) / Width</label><input id="width" type="number"></div>
+      <div><label>الارتفاع (سم) / Height</label><input id="height" type="number"></div>
+    </div>
+    <label>صورة النافذة</label>
+    <input id="windowPhoto" type="file" accept="image/*" capture="environment" onchange="previewWindowPhoto(event)">
+    <div id="windowPreview"></div>
+
+    <div class="btns">
+      <button type="button" class="btn" onclick="addMeasurement()">💾 حفظ القياس</button>
+      <button type="button" class="btn ghost" onclick="resetMeasurementForm()">🧹 تفريغ الحقول</button>
+    </div>
+
+    <div id="measureList"></div>
+
+    <div class="hr"></div>
+    <div class="btns">
+      <button type="button" class="btn secondary" onclick="goto('page-client'); setStep('client')">عودة</button>
+      <button type="button" class="btn" onclick="startFabricAssignment()">🎨 اختيار القماش</button>
+    </div>
+  </div>
+
+  <!-- اختيار القماش -->
+  <div class="container hidden" id="page-fabrics">
+    <h2>اختيار القماش لكل ستارة</h2>
+    <div id="fabricHeader" style="text-align:center; margin-bottom:10px;"></div>
+    <div class="list" id="fabricInfo"></div>
+    <div id="fabricButtonsContainer"></div>
+
+    <input type="hidden" id="fabric" />
+    <div class="list">السعر: <b><span id="price">0</span></b> درهم + VAT: <b><span id="vat">0</span></b> = الإجمالي: <b><span id="total">0</span></b> درهم</div>
+
+    <div class="row">
+      <div><label>كود قماش الشيفون</label><input id="codeChiffon" placeholder="CH-123"/></div>
+      <div><label>صورة قماش الشيفون</label><input accept="image/*" capture="environment" id="photoChiffon" type="file" onchange="previewFabricPhoto(event,'chiffonPreview')" /></div>
+      <div id="chiffonPreview"></div>
+    </div>
+
+    <div class="row">
+      <div><label>كود قماش البلاك أوت / مخمل</label><input id="codeBlackout" placeholder="BO-456"/></div>
+      <div><label>صورة قماش البلاك أوت / مخمل</label><input accept="image/*" capture="environment" id="photoBlackout" type="file" onchange="previewFabricPhoto(event,'blackoutPreview')" /></div>
+      <div id="blackoutPreview"></div>
+    </div>
+
+    <div class="btns">
+      <button type="button" class="btn secondary" onclick="prevFabric()">⬅️ السابق</button>
+      <button type="button" class="btn" onclick="saveFabricAndNext()">➡️ التالي</button>
+      <button type="button" class="btn" onclick="finishFabrics()">✅ إنهاء والذهاب للملخص</button>
+    </div>
+  </div>
+
+  <!-- الملخص -->
+  <div class="container hidden" id="page-summary">
+    <h2>ملخص الطلب / Order Summary</h2>
+    <div id="summaryContent"></div>
+
+    <label>ملاحظات / Notes</label><textarea id="notes" placeholder="اكتب ملاحظاتك هنا..."></textarea>
+
+    <div class="total-box">
+      <p>الإجمالي بدون VAT: <b><span id="sumPrice">0</span></b> درهم</p>
+      <p>إجمالي VAT (5%): <b><span id="sumVAT">0</span></b> درهم</p>
+      <p><strong>الإجمالي النهائي: <span id="sumTotal">0</span> درهم</strong></p>
+      <p>الخصم / Discount: <input id="discount" oninput="updateTotal()" placeholder="0" style="width:140px" type="number"/> درهم</p>
+      <p><strong>الإجمالي بعد الخصم: <span id="sumAfterDiscount">0</span> درهم</strong></p>
+    </div>
+    <div class="btns">
+      <button type="button" id="btnPDF" class="btn" onclick="window.generatePDF()">تحميل PDF</button>
+      <button type="button" id="btnSave" class="btn" onclick="saveOrder()">💾 حفظ</button>
+      <button type="button" class="btn" onclick="sendToWhatsApp()">إرسال واتساب</button>
+      <button type="button" class="btn secondary" onclick="goto('page-home'); setStep(null)">🏠 الرئيسية</button>
+    </div>
+  </div>
+
+  <!-- عرض الطلب -->
+  <div class="container hidden" id="page-view-order">
+    <h2>📄 عرض الطلب</h2>
+    <div id="viewOrderContent"></div>
+    <div class="btns">
+      <button type="button" id="editButton" class="btn">✏️ تعديل</button>
+      <button type="button" id="deleteButton" class="btn del">🗑️ حذف</button>
+      <button type="button" onclick="printOrder()" class="btn">🖨️ طباعة</button>
+      <button type="button" class="btn secondary" onclick="goto('page-home')">🏠 الرئيسية</button>
+    </div>
+  </div>
+
+  <!-- تعديل الطلب -->
+  <div class="container hidden" id="page-edit-order">
+    <h2>تعديل الطلب</h2>
+    <div id="editOrderList"></div>
+    <div class="btns">
+      <button type="button" class="btn ghost" onclick="addCurtainInEdit()">➕ إضافة ستارة</button>
+      <button type="button" class="btn" onclick="saveEditedOrder()">💾 حفظ التعديلات</button>
+      <button type="button" class="btn secondary" onclick="cancelEdit()">إلغاء</button>
+    </div>
+  </div>
+
 <script>
+  // ====== إعدادات ضغط الصور لتفادي امتلاء localStorage ======
+  const MAX_IMG_W = 1200;      // أقصى عرض عند التخزين
+  const MAX_IMG_H = 900;       // أقصى ارتفاع
+  const JPEG_QUALITY = 0.7;    // جودة JPEG عند التخزين
+  const JPEG_QUALITY_FALLBACK = 0.6; // في حال بقي الحجم كبيراً
 
-function handleImageUpload(file, callback) {
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const img = new Image();
-    img.onload = function () {
-      let canvas = document.createElement("canvas");
-      let ctx = canvas.getContext("2d");
+  async function fileToResizedDataURL(file, maxW=MAX_IMG_W, maxH=MAX_IMG_H, quality=JPEG_QUALITY){
+    const img = await new Promise((res,rej)=>{
+      const fr = new FileReader();
+      fr.onload = () => {
+        const im = new Image();
+        im.onload = () => res(im);
+        im.onerror = rej;
+        im.src = fr.result;
+      };
+      fr.onerror = rej;
+      fr.readAsDataURL(file);
+    });
 
-      if (img.width > img.height) {
-        // الصورة بوضع landscape: تدوير 90 درجة
-        canvas.width = img.height;
-        canvas.height = img.width;
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(-90 * Math.PI / 180);
-        ctx.drawImage(img, -img.width / 2, -img.height / 2);
-      } else {
-        // الصورة بوضع عادي
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-      }
-
-      const normalizedBase64 = canvas.toDataURL("image/jpeg");
-      callback(normalizedBase64);
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-
-
-
-let curtains = [];
-let windowPhotoData = null, chiffonPhotoData = null, blackoutPhotoData = null;
-  document.getElementById('windowPreview').innerHTML = "";
-  document.getElementById('chiffonPreview').innerHTML = "";
-  document.getElementById('blackoutPreview').innerHTML = "";
-
-function next(from, to, back=false){
-  document.getElementById(from).classList.add('hidden');
-  document.getElementById(to).classList.remove('hidden');
-}
-
-function previewWindowPhoto(e){
-  const file = e.target.files[0];
-  if (file){
-    windowPhotoData = URL.createObjectURL(file);
-    document.getElementById("windowPreview").innerHTML = `<img src="${windowPhotoData}" class="preview-img">`;
-  }
-}
-
-function previewFabricPhoto(e, previewId){
-  const file = e.target.files[0];
-  if (file){
-    const imgURL = URL.createObjectURL(file);
-    if(previewId === 'chiffonPreview') chiffonPhotoData = imgURL;
-    else blackoutPhotoData = imgURL;
-    document.getElementById(previewId).innerHTML = `<img src="${imgURL}" class="preview-img">`;
-  }
-}
-
-
-document.querySelectorAll('.fabric-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.fabric-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    document.getElementById('fabric').value = btn.getAttribute('data-price');
-    document.getElementById('fabric').setAttribute('data-label', btn.getAttribute('data-label'));
-    calcCurtainPrice();
-  });
-});
-
-
-function calcCurtainPrice() {
-  const w = parseFloat(document.getElementById("width").value) || 0;
-  const h = parseFloat(document.getElementById("height").value) || 0;
-  const fabric = parseFloat(document.getElementById("fabric").value) || 0;
-  const area = (w / 100) * (h / 100);
-  const price = area * fabric;
-  const vat = price * 0.05;
-  const total = price + vat;
-
-  document.getElementById("price").innerText = price.toFixed(2);
-  document.getElementById("vat").innerText = vat.toFixed(2);
-  document.getElementById("total").innerText = total.toFixed(2);
-}
-
-function saveCurtain() {
-  const curtain = {
-    location: document.getElementById("curtain-location").value,
-    width: document.getElementById("width").value,
-    height: document.getElementById("height").value,
-    fabric: document.getElementById("fabric").getAttribute("data-label"),
-    price: document.getElementById("price").innerText,
-    vat: document.getElementById("vat").innerText,
-    total: document.getElementById("total").innerText,
-    codeChiffon: document.getElementById("codeChiffon").value,
-    codeBlackout: document.getElementById("codeBlackout").value,
-    windowPhoto: windowPhotoData,
-    chiffonPhoto: chiffonPhotoData,
-    blackoutPhoto: blackoutPhotoData
-  };
-  curtains.push(curtain);
-  next('page-fabric-photo','page-choice');
-}
-
-function resetCurtainForm() {
-  document.getElementById("curtain-location").value = "";
-  document.getElementById("width").value = "";
-  document.getElementById("height").value = "";
-  document.getElementById("fabric").selectedIndex = 0;
-  document.getElementById("price").innerText = "0";
-  document.getElementById("vat").innerText = "0";
-  document.getElementById("total").innerText = "0";
-  document.getElementById("codeChiffon").value = "";
-  document.getElementById("codeBlackout").value = "";
-
-  // تفريغ الصور والمعاينات
-  windowPhotoData = null;
-  chiffonPhotoData = null;
-  blackoutPhotoData = null;
-  document.getElementById('windowPreview').innerHTML = "";
-  document.getElementById('chiffonPreview').innerHTML = "";
-  document.getElementById('blackoutPreview').innerHTML = "";
-
-  // تفريغ حقول تحميل الصور
-  document.getElementById("windowPhoto").value = "";
-  document.getElementById("photoChiffon").value = "";
-  document.getElementById("photoBlackout").value = "";
-}
-
-function showSummary() {
-  next('page-choice','page-summary');
-  const s = document.getElementById("summaryContent");
-  let summary = `
-    <p><strong>الاسم:</strong> ${document.getElementById("name").value}</p>
-    <p><strong>الهاتف:</strong> ${document.getElementById("phone").value}</p>
-    <p><strong>العنوان:</strong> ${document.getElementById("address").value}</p>
-    <p><strong>تاريخ الزيارة:</strong> ${document.getElementById("date").value}</p>
-    <hr />
-  `;
-  let totalPrice = 0, totalVAT = 0;
-
-  curtains.forEach((curtain, index) => {
-    summary += `
-      <div class="curtain-summary">
-        <h3>ستارة ${index + 1} (${curtain.location})</h3>
-        <p><strong>العرض:</strong> ${curtain.width} سم</p>
-        <p><strong>الارتفاع:</strong> ${curtain.height} سم</p>
-        <p><strong>نوع القماش:</strong> ${curtain.fabric}</p>
-        <p><strong>كود الشيفون:</strong> ${curtain.codeChiffon}</p>
-        <p><strong>كود البلاك أوت/مخمل:</strong> ${curtain.codeBlackout}</p>
-        <p><strong>السعر:</strong> ${curtain.price} درهم + ${curtain.vat} VAT = ${curtain.total} درهم</p>
-        ${curtain.windowPhoto ? `<img src="${curtain.windowPhoto}" class="preview-img">` : ""}
-        ${curtain.chiffonPhoto ? `<img src="${curtain.chiffonPhoto}" class="preview-img">` : ""}
-        ${curtain.blackoutPhoto ? `<img src="${curtain.blackoutPhoto}" class="preview-img">` : ""}
-      </div>
-    `;
-    totalPrice += parseFloat(curtain.price);
-    totalVAT += parseFloat(curtain.vat);
-  });
-
-  document.getElementById("sumPrice").innerText = totalPrice.toFixed(2);
-  document.getElementById("sumVAT").innerText = totalVAT.toFixed(2);
-  document.getElementById("sumTotal").innerText = (totalPrice + totalVAT).toFixed(2);
-  summary += `<p><strong>ملاحظات:</strong> ${document.getElementById("notes").value}</p>`;
-  s.innerHTML = summary;
-}
-
-async function generatePDF() {
-  const { jsPDF } = window.jspdf;
-  const element = document.getElementById("summaryContent");
-  const canvas = await html2canvas(element, { scale: 2 });
-  const img = canvas.toDataURL("image/jpeg", 1.0);
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const imgProps = pdf.getImageProperties(img);
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-  pdf.addImage(img, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-  pdf.save("طلب_ستائر.pdf");
-}
-
-
-
-function getFabricOnly(fullText) {
-  if (!fullText) return "";
-  if (fullText.includes("Velvet")) return "Velvet with Chiffon";
-  if (fullText.includes("Blackout")) return "Blackout with Chiffon";
-  if (fullText.includes("Chiffon")) return "Chiffon";
-  return fullText;
-}
-
-
-
-function fixImageOrientation(base64, callback) {
-  const img = new Image();
-  img.onload = function () {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    ctx.drawImage(img, 0, 0);
-    const cleanBase64 = canvas.toDataURL("image/jpeg");
-    callback(cleanBase64);
-  };
-  img.src = base64;
-}
 
-
-function sendToWhatsApp() {
-  const name = document.getElementById("name").value;
-  const phone = document.getElementById("phone").value;
-  const address = document.getElementById("address").value;
-  const date = document.getElementById("date").value;
-  const notes = document.getElementById("notes").value;
-
-  let msg = `طلب ستائر\n`;
-  msg += `الاسم: ${name}\n`;
-  msg += `الهاتف: ${phone}\n`;
-  msg += `العنوان: ${address}\n`;
-  msg += `تاريخ الزيارة: ${date}\n`;
-
-  curtains.forEach((c, i) => {
-    msg += `\nستارة ${i+1} (${c.location})\n`;
-    msg += `العرض: ${c.width} سم\n`;
-    msg += `الارتفاع: ${c.height} سم\n`;
-    msg += `نوع القماش: ${c.fabric}\n`;
-    msg += `كود الشيفون: ${c.codeChiffon}\n`;
-    msg += `كود البلاك أوت/مخمل: ${c.codeBlackout}\n`;
-    msg += `السعر: ${c.price} + ${c.vat} VAT = ${c.total} درهم\n`;
-  });
-
-  const total = document.getElementById("sumTotal").innerText;
-  const discount = document.getElementById("discount").value;
-  const finalAfterDiscount = document.getElementById("sumAfterDiscount").innerText;
-
-  msg += `\nالإجمالي: ${total} درهم`;
-  if (discount) {
-    msg += `\nالخصم: ${discount} درهم`;
-    msg += `\nبعد الخصم: ${finalAfterDiscount} درهم`;
-  }
-  if (notes) msg += `\nملاحظات: ${notes}`;
-
-  window.open(`https://wa.me/971504133032?text=${encodeURIComponent(msg)}`, '_blank');
-}
-
-
-window.generatePDF = generatePDF;
-
-window.generatePDF = async function () {
-  const doc = new jspdf.jsPDF("p", "mm", "a4");
-  let y = 20;
-
-  const logo = new Image();
-  logo.src = "https://i.postimg.cc/L4QwkTxg/LOGO23333.png";
-  await new Promise(resolve => logo.onload = resolve);
-  const ratio = logo.width / logo.height;
-  const logoHeight = 20;
-  const logoWidth = ratio * logoHeight;
-  const xLogo = (210 - logoWidth) / 2;
-  doc.addImage(logo, "PNG", xLogo, y, logoWidth, logoHeight);
-  y += logoHeight + 5;
-
-  // Client Info
-  const name = document.getElementById("name").value;
-  const phone = document.getElementById("phone").value;
-  const address = document.getElementById("address").value;
-  const date = document.getElementById("date").value;
-
-  doc.setFontSize(11);
-  doc.text("Client Name: " + name, 14, y); y += 6;
-  doc.text("Phone: " + phone, 14, y); y += 6;
-  doc.text("Address: " + address, 14, y); y += 6;
-  doc.text("Visit Date: " + date, 14, y); y += 6;
-  const notes = document.getElementById("notes").value;
-  if (notes) {
-    doc.text("Notes: " + notes, 14, y); y += 8;
-  } else { y += 2; }
-
-  doc.setFontSize(14);
-  doc.text("Order Summary", 105, y, { align: "center" });
-  y += 10;
-
-  const headers = [["Location", "Width", "Height", "Fabric", "Chiffon Code", "Blackout Code", "Price (AED)"]];
-  const rows = [];
-  let totalPrice = 0, totalVAT = 0;
-
-  for (let i = 0; i < curtains.length; i++) {
-    const c = curtains[i];
-    totalPrice += parseFloat(c.price);
-    totalVAT += parseFloat(c.vat);
-    
-    
-    rows.push([c.location, c.width, c.height, getFabricOnly(c.fabric),
-      c.codeChiffon,
-      c.codeBlackout,
-      c.total + " AED"
-    ]);
+    let {width:w, height:h} = img;
+    const ratio = Math.min(maxW / w, maxH / h, 1);
+    const nw = Math.round(w * ratio);
+    const nh = Math.round(h * ratio);
+    canvas.width = nw;
+    canvas.height = nh;
+    ctx.drawImage(img, 0, 0, nw, nh);
+    return canvas.toDataURL('image/jpeg', quality);
   }
 
-  doc.autoTable({
-    head: headers,
-    body: rows,
-    startY: y,
-    styles: { fontSize: 9 },
-    columnStyles: { 6: { cellWidth: 25 } },
-    didDrawPage: function (data) {
-      y = data.cursor.y + 5;
-    }
-  });
-
-  // Images
-  for (let i = 0; i < curtains.length; i++) {
-    const c = curtains[i];
-    doc.setFontSize(11);
-    doc.text("Images for Curtain " + (i + 1), 14, y);
-    y += 4;
-
-    const loadAndAdd = async (src, x, y, label) => {
-      if (src) {
-        const img = new Image();
-        img.src = src;
-        await new Promise(resolve => img.onload = resolve);
-        doc.addImage(img, "JPEG", x, y, 40, 30);
-        doc.setFontSize(8);
-        doc.text(label, x, y + 34);
-      }
-    };
-
-    await loadAndAdd(c.windowPhoto, 14, y, "Window");
-    await loadAndAdd(c.chiffonPhoto, 50, y, "Chiffon");
-    await loadAndAdd(c.blackoutPhoto, 86, y, "Blackout");
-
-    y += 42;
-    if (y > 250) {
-      doc.addPage();
-      y = 20;
-    }
-  }
-
-  y += 5;
-  doc.setFontSize(11);
-  doc.text("Total without VAT: " + totalPrice.toFixed(2) + " AED", 14, y);
-  y += 6;
-  doc.text("VAT (5%): " + totalVAT.toFixed(2) + " AED", 14, y);
-  y += 6;
-  doc.text("Final Total: " + (totalPrice + totalVAT).toFixed(2) + " AED", 14, y);
-  y += 6;
-  const discountEl = document.getElementById("discount");
-  if (discountEl && discountEl.value) {
-    const discount = parseFloat(discountEl.value) || 0;
-    doc.text("Discount: -" + discount.toFixed(2) + " AED", 14, y);
-    y += 6;
-    const finalAfterDiscount = totalPrice + totalVAT - discount;
-    doc.text("Total After Discount: " + finalAfterDiscount.toFixed(2) + " AED", 14, y);
-  }
-  y += 10;
-
-  const terms = [
-    "(I) - 75% of the contract value shall be payable as advance payment at the time of signing the contract.",
-    "(II) - 25% at Finishing 50% of work.",
-    "(IV) - The payment shall be released as per the mutually agreed terms & conditions.",
-    "(IV) - Any additional works will be charged."
+  // ====== الحالة العامة ======
+  const fabricOptions = [
+    {label:"Chiffon - 70 AED / شيفون", price:70},
+    {label:"Chiffon Wavy - 90 AED / شيفون ويفي", price:90},
+    {label:"Velvet - 90 AED / مخمل", price:90},
+    {label:"Velvet Wavy - 100 AED / مخمل ويفي", price:100},
+    {label:"Velvet with Chiffon - 110 AED / مخمل مع شيفون", price:110},
+    {label:"Velvet Wavy with Chiffon - 130 AED / مخمل ويفي مع شيفون", price:130},
+    {label:"Velvet with Chiffon Wavy - 120 AED / مخمل مع شيفون ويفي", price:120},
+    {label:"Velvet Wavy with Chiffon Wavy - 150 AED / مخمل ويفي مع شيفون ويفي", price:150},
+    {label:"Blackout - 120 AED / بلاك اوت", price:120},
+    {label:"Blackout Wavy - 135 AED / بلاك اوت ويفي", price:135},
+    {label:"Blackout with Chiffon - 150 AED / بلاك اوت مع شيفون", price:150},
+    {label:"Blackout Wavy with Chiffon - 185 AED / بلاك اوت ويفي مع شيفون", price:185},
+    {label:"Blackout with Chiffon Wavy - 170 AED / بلاك اوت مع شيفون ويفي", price:170},
+    {label:"Blackout Wavy with Chiffon Wavy - 200 AED / بلاك اوت ويفي مع شيفون ويفي", price:200},
+    {label:"Roll-up - 120 AED / رول اب", price:120},
   ];
-  doc.setFontSize(11);
-  doc.text("Payment Terms:", 14, y);
-  y += 6;
-  terms.forEach(t => {
-    doc.text(t, 14, y);
-    y += 6;
+  let curtains = []; // الجلسة الحالية
+  let windowPhotoData = null, chiffonPhotoData = null, blackoutPhotoData = null;
+  let currentFabricIndex = 0;
+  let selectedOrderIndex = null; // للتعديل
+  let editOrderObject = null;
+
+  // ====== تنقل بسيط ======
+  document.addEventListener('DOMContentLoaded', () => {
+    goto('page-home'); setStep(null);
+    buildFabricButtons();
   });
-
-  const safeName = name.replace(/[^a-zA-Z0-9؀-ۿ ]+/g, "_").substring(0, 20).trim();
-  doc.save(`${safeName}_Curtain_Order.pdf`);
-};
-function updateTotal() {
-  const total = parseFloat(document.getElementById("sumTotal").innerText) || 0;
-  const discount = parseFloat(document.getElementById("discount").value) || 0;
-  const final = total - discount;
-  document.getElementById("sumAfterDiscount").innerText = final.toFixed(2);
-}
-
-window.onload = function () {
-  document.querySelectorAll('.container').forEach(div => div.classList.add('hidden'));
-  document.getElementById('page-home').classList.remove('hidden');
-};
-
-function saveOrder() {
-  const client = {
-    name: document.getElementById("name").value,
-    phone: document.getElementById("phone").value,
-    address: document.getElementById("address").value,
-    date: document.getElementById("date").value,
-    notes: document.getElementById("notes").value,
-    curtains: curtains,
-    total: document.getElementById("sumTotal").innerText,
-    discount: document.getElementById("discount").value,
-    afterDiscount: document.getElementById("sumAfterDiscount").innerText
-  };
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  orders.push(client);
-  localStorage.setItem("curtainOrders", JSON.stringify(orders));
-  alert("تم حفظ الطلب بنجاح ✅");
-  next('page-summary','page-home');
-}
-
-function showOrders() {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  let html = "";
-
-  if (orders.length === 0) {
-    html = "<p>لا توجد طلبات محفوظة.</p>";
-  } else {
-    orders.forEach((o, index) => {
-      html += `
-        <div class="order-summary">
-          <p><strong>${o.name}</strong> - ${o.date}</p>
-          <p>الإجمالي: ${o.total} درهم</p>
-          <button onclick='viewOrder(${index})'>👁️ عرض</button>
-          <button onclick="deleteOrder(${index})">🗑️ حذف</button>
-          <hr/>
-        </div>
-      `;
+  function showOnly(id){ document.querySelectorAll('.container').forEach(c=>c.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+  function goto(id){ showOnly(id); }
+  function setStep(which){
+    const ids = ['client','measure','fabric','summary'];
+    ids.forEach(k => {
+      const el = document.getElementById('st-'+k);
+      if(!el) return;
+      if(which===k) el.classList.add('active'); else el.classList.remove('active');
     });
   }
 
-  document.getElementById("ordersList").innerHTML = html;
-  next('page-home','page-orders');
-}
-
-function deleteOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  if (confirm("هل أنت متأكد من حذف هذا الطلب؟")) {
-    orders.splice(index, 1);
-    localStorage.setItem("curtainOrders", JSON.stringify(orders));
-    showOrders();
+  // ====== محولات الصور (مع ضغط) ======
+  async function previewWindowPhoto(e){
+    const f=e.target.files&&e.target.files[0];
+    if(f){ windowPhotoData = await fileToResizedDataURL(f); document.getElementById("windowPreview").innerHTML='<img src="'+windowPhotoData+'" class="preview-img">'; }
   }
-}
-
-function editOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  const o = orders[index];
-
-  document.getElementById("name").value = o.name;
-  document.getElementById("phone").value = o.phone;
-  document.getElementById("address").value = o.address;
-  document.getElementById("date").value = o.date;
-  document.getElementById("notes").value = o.notes;
-  document.getElementById("discount").value = o.discount || 0;
-  curtains = o.curtains || [];
-  showSummary();
-}
-
-
-function printOrder() {
-  const content = document.getElementById("viewOrderContent").innerHTML;
-  const win = window.open('', '', 'width=800,height=600');
-  win.document.write(`
-    <html>
-<head>
-<title>طباعة الطلب</title>
-
-
-<style>
-  body {
-    font-family: 'Amiri', serif;
-    direction: rtl;
-    padding: 20px;
+  function resetMeasurementForm(){
+    ['measure-location','width','height'].forEach(id=>document.getElementById(id).value='');
+    const file=document.getElementById('windowPhoto'); if(file) file.value='';
+    windowPhotoData=null; document.getElementById('windowPreview').innerHTML='';
   }
-  .curtain-summary {
-    border-bottom: 1px solid #ccc;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
+  function addMeasurement(){
+    const loc=(document.getElementById("measure-location").value||'').trim();
+    const w=parseFloat(document.getElementById("width").value)||0;
+    const h=parseFloat(document.getElementById("height").value)||0;
+    if(!loc){ alert("اكتب موقع الستارة"); return; }
+    if(!w||!h){ alert("أدخل العرض والارتفاع"); return; }
+    curtains.push({location:loc,width:w,height:h,windowPhoto:windowPhotoData,fabric:null,price:0,vat:0,total:0,codeChiffon:"",codeBlackout:"",chiffonPhoto:null,blackoutPhoto:null});
+    resetMeasurementForm();
+    renderMeasureList();
+    alert("تم حفظ القياس ✅");
   }
-  img {
-    max-width: 200px;
-    max-height: 140px;
-    display: block;
-    margin-top: 8px;
+  function renderMeasureList(){
+    const cont=document.getElementById("measureList");
+    if(!curtains.length){cont.innerHTML='';return;}
+    let html='<h3 style="text-align:center">القياسات المُضافة</h3>';
+    curtains.forEach((c,i)=>{
+      html+= '<div class="curtain-summary"><strong>ستارة '+(i+1)+' - ('+c.location+')</strong><div>العرض: '+c.width+' سم — الارتفاع: '+c.height+' سم</div>'+(c.windowPhoto?'<img src="'+c.windowPhoto+'" class="preview-img">':'')+'</div>';
+    });
+    cont.innerHTML=html;
   }
-</style>
 
+  // ====== اختيار القماش ======
+  function buildFabricButtons(){
+    const cont=document.getElementById('fabricButtonsContainer'); if(!cont) return;
+    cont.innerHTML=''; let row=null;
+    fabricOptions.forEach((opt,idx)=>{
+      if(idx%4===0){ row=document.createElement('div'); row.className='fabric-row'; cont.appendChild(row); }
+      const b=document.createElement('button'); b.type='button'; b.className='fabric-btn'; b.textContent=opt.label;
+      b.dataset.label=opt.label; b.dataset.price=opt.price;
+      b.onclick=()=>{ document.querySelectorAll('.fabric-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); document.getElementById('fabric').value=opt.price; document.getElementById('fabric').setAttribute('data-label', opt.label); calcCurtainPriceForIndex(currentFabricIndex); };
+      row.appendChild(b);
+    });
+  }
+  async function previewFabricPhoto(e, previewId){
+    const f=e.target.files&&e.target.files[0];
+    if(f){
+      const b64 = await fileToResizedDataURL(f);
+      if(previewId==='chiffonPreview') chiffonPhotoData=b64; else blackoutPhotoData=b64;
+      document.getElementById(previewId).innerHTML='<img src="'+b64+'" class="preview-img">';
+      calcCurtainPriceForIndex(currentFabricIndex);
+    }
+  }
+  function startFabricAssignment(){
+    if(!curtains.length){ alert("أضف قياسًا واحدًا على الأقل أولاً."); return; }
+    currentFabricIndex=0; loadFabricForm(); goto('page-fabrics'); setStep('fabric');
+  }
+  function loadFabricForm(){
+    const c=curtains[currentFabricIndex];
+    document.getElementById("fabricHeader").innerText='ستارة '+(currentFabricIndex+1)+' من '+curtains.length;
+    document.getElementById("fabricInfo").innerHTML='<div><strong>الموقع:</strong> '+c.location+'</div><div><strong>العرض:</strong> '+c.width+' سم</div><div><strong>الارتفاع:</strong> '+c.height+' سم</div>';
+    document.querySelectorAll('.fabric-btn').forEach(b=>b.classList.remove('selected'));
+    if(c.fabric){
+      const btn=[...document.querySelectorAll('.fabric-btn')].find(x=>x.dataset.label===c.fabric);
+      if(btn){ btn.classList.add('selected'); document.getElementById('fabric').value=btn.dataset.price; document.getElementById('fabric').setAttribute('data-label', btn.dataset.label); }
+    }else{ document.getElementById('fabric').value=''; document.getElementById('fabric').removeAttribute('data-label'); }
+    document.getElementById("price").innerText = c.price ? Number(c.price).toFixed(2) : "0";
+    document.getElementById("vat").innerText = c.vat ? Number(c.vat).toFixed(2) : "0";
+    document.getElementById("total").innerText = c.total ? Number(c.total).toFixed(2) : "0";
+    document.getElementById("codeChiffon").value = c.codeChiffon || "";
+    document.getElementById("codeBlackout").value = c.codeBlackout || "";
+    // previews
+    chiffonPhotoData = c.chiffonPhoto || null; blackoutPhotoData = c.blackoutPhoto || null;
+    document.getElementById('chiffonPreview').innerHTML = c.chiffonPhoto?'<img src="'+c.chiffonPhoto+'" class="preview-img">':'';
+    document.getElementById('blackoutPreview').innerHTML = c.blackoutPhoto?'<img src="'+c.blackoutPhoto+'" class="preview-img">':'';
+    const pc=document.getElementById('photoChiffon'); if(pc) pc.value='';
+    const pb=document.getElementById('photoBlackout'); if(pb) pb.value='';
+  }
+  function calcCurtainPriceForIndex(idx){
+    const c=curtains[idx]; const w=parseFloat(c.width)||0; const h=parseFloat(c.height)||0; const fabricPrice=parseFloat(document.getElementById("fabric").value)||0;
+    const area=(w/100)*(h/100); const price=area*fabricPrice; const vat=price*0.05; const total=price+vat;
+    document.getElementById("price").innerText=price.toFixed(2);
+    document.getElementById("vat").innerText=vat.toFixed(2);
+    document.getElementById("total").innerText=total.toFixed(2);
+  }
+  function saveFabricAndNext(){
+    const c=curtains[currentFabricIndex];
+    const fabricLabel=document.getElementById("fabric").getAttribute("data-label") || c.fabric;
+    const fabricUnit=parseFloat(document.getElementById("fabric").value)||0;
+    if(!fabricLabel){ alert("اختر نوع القماش أولاً"); return; }
+    const area=(c.width/100)*(c.height/100); const price=area*fabricUnit; const vat=price*0.05; const total=price+vat;
+    c.fabric=fabricLabel; c.price=price.toFixed(2); c.vat=vat.toFixed(2); c.total=total.toFixed(2);
+    c.codeChiffon=document.getElementById("codeChiffon").value||""; c.codeBlackout=document.getElementById("codeBlackout").value||"";
+    c.chiffonPhoto=chiffonPhotoData; c.blackoutPhoto=blackoutPhotoData;
+    if(currentFabricIndex<curtains.length-1){ currentFabricIndex++; loadFabricForm(); } else { finishFabrics(); }
+  }
+  function prevFabric(){ if(currentFabricIndex>0){ currentFabricIndex--; loadFabricForm(); } else alert("هذه أول ستارة"); }
+  function finishFabrics(){ showSummary(); setStep('summary'); }
 
-</head>
-<body onload="window.print(); window.close();">
-        ${content}
-      </body>
-</html>
-  `);
-  win.document.close();
-}
+  // ====== الملخص والحسابات ======
+  function showSummary(){
+    goto('page-summary');
+    const s=document.getElementById("summaryContent"); let html=''; let totalPrice=0,totalVAT=0;
+    html+='<div class="row"><div><b>الاسم:</b> '+(val('name')||'')+'</div><div><b>الهاتف:</b> '+(val('phone')||'')+'</div><div><b>التاريخ:</b> '+(val('date')||'')+'</div></div><div><b>العنوان:</b> '+(val('address')||'')+'</div><div class="hr"></div>';
+    curtains.forEach((c,i)=>{
+      html+='<div class="curtain-summary"><h3>ستارة '+(i+1)+' — '+c.location+'</h3>'+
+            '<div class="row"><div><b>العرض:</b> '+c.width+' سم</div><div><b>الارتفاع:</b> '+c.height+' سم</div><div><b>القماش:</b> '+(c.fabric||'—')+'</div></div>'+
+            '<div class="row"><div><b>كود الشيفون:</b> '+(c.codeChiffon||'—')+'</div><div><b>كود البلاك/مخمل:</b> '+(c.codeBlackout||'—')+'</div></div>'+
+            '<div><b>السعر:</b> '+(c.price||0)+' + VAT '+(c.vat||0)+' = '+(c.total||0)+' درهم</div>'+
+            (c.windowPhoto?'<img src="'+c.windowPhoto+'" class="preview-img">':'')+
+            (c.chiffonPhoto?'<img src="'+c.chiffonPhoto+'" class="preview-img">':'')+
+            (c.blackoutPhoto?'<img src="'+c.blackoutPhoto+'" class="preview-img">':'')+
+            '</div>';
+      totalPrice += parseFloat(c.price)||0; totalVAT += parseFloat(c.vat)||0;
+    });
+    document.getElementById("sumPrice").innerText=totalPrice.toFixed(2);
+    document.getElementById("sumVAT").innerText=totalVAT.toFixed(2);
+    document.getElementById("sumTotal").innerText=(totalPrice+totalVAT).toFixed(2);
+    s.innerHTML=html; updateTotal();
+  }
+  function updateTotal(){ const total=parseFloat(txt('sumTotal'))||0; const discount=parseFloat(val('discount'))||0; document.getElementById('sumAfterDiscount').innerText=(total-discount).toFixed(2); }
 
-let selectedOrderIndex = null;
+  // ====== تحقّق قبل الحفظ + ضغط إضافي إن لزم (حل مشكلة الكوتا) ======
+  function canSave(){
+    if(!curtains.length){ alert('أضف ستارة واحدة على الأقل قبل الحفظ.'); return false; }
+    for(let i=0;i<curtains.length;i++){
+      const c=curtains[i];
+      if(!c.fabric){ alert('اختر القماش لكل الستائر قبل الحفظ. ستارة رقم: '+(i+1)); return false; }
+    }
+    return true;
+  }
 
-function viewOrder(index) {
-  const orders = JSON.parse(localStorage.getItem("curtainOrders") || "[]");
-  const o = orders[index];
-  selectedOrderIndex = index;
+  async function compressAllCurtainImages(extra=false){
+    // في حال بقي الحجم كبير، نقلل الجودة والأبعاد قليلاً
+    const maxW = extra ? 900 : MAX_IMG_W;
+    const maxH = extra ? 700 : MAX_IMG_H;
+    const q    = extra ? JPEG_QUALITY_FALLBACK : JPEG_QUALITY;
 
-  let html = `
-    <p><strong>الاسم:</strong> ${o.name}</p>
-<p><strong>الهاتف:</strong> ${o.phone}</p>
-<p><strong>العنوان:</strong> ${o.address}</p>
-<p><strong>تاريخ الزيارة:</strong> ${o.date}</p>
-<p><strong>ملاحظات:</strong> ${o.notes}</p>
-<hr/>
-  `;
+    async function resizeDataURLIfNeeded(dataURL){
+      if(!dataURL) return null;
+      // إذا هي أصلاً dataURL سنرسمها على كانفس ونُعيد ترميزها بجودة أقل/حجم أصغر
+      const img = await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=dataURL; });
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+      const w = Math.round(img.width * ratio), h = Math.round(img.height * ratio);
+      canvas.width = w; canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      return canvas.toDataURL('image/jpeg', q);
+    }
 
-  o.curtains.forEach((curtain, i) => {
-    html += `
-      <div class="curtain-summary">
-<h3>ستارة ${i + 1} (${curtain.location})</h3>
-<p><strong>العرض:</strong> ${curtain.width} سم</p>
-<p><strong>الارتفاع:</strong> ${curtain.height} سم</p>
-<p><strong>نوع القماش:</strong> ${curtain.fabric}</p>
-<p><strong>كود الشيفون:</strong> ${curtain.codeChiffon}</p>
-<p><strong>كود البلاك أوت/مخمل:</strong> ${curtain.codeBlackout}</p>
-<p><strong>السعر:</strong> ${curtain.price} درهم + ${curtain.vat} VAT = ${curtain.total} درهم</p>
-${curtain.windowPhoto ? `<img src="${curtain.windowPhoto}" class="preview-img">` : ""}
-${curtain.chiffonPhoto ? `<img src="${curtain.chiffonPhoto}" class="preview-img">` : ""}
-${curtain.blackoutPhoto ? `<img src="${curtain.blackoutPhoto}" class="preview-img">` : ""}
-</div>
-    `;
-  });
+    for(const c of curtains){
+      c.windowPhoto   = await resizeDataURLIfNeeded(c.windowPhoto);
+      c.chiffonPhoto  = await resizeDataURLIfNeeded(c.chiffonPhoto);
+      c.blackoutPhoto = await resizeDataURLIfNeeded(c.blackoutPhoto);
+    }
+  }
 
-  html += `
-    <hr/>
-<p><strong>الإجمالي:</strong> ${o.total} درهم</p>
-<p><strong>الخصم:</strong> ${o.discount} درهم</p>
-<p><strong>بعد الخصم:</strong> ${o.afterDiscount} درهم</p>
-  `;
+  let saving=false;
+  async function saveOrder(){
+    try{
+      if(saving) return;
+      if(!canSave()) return;
+      saving=true;
+      const btn=document.getElementById('btnSave'); if(btn){ btn.disabled=true; btn.textContent='... جارٍ الحفظ'; }
 
-  document.getElementById("viewOrderContent").innerHTML = html;
+      // الضغط قبل الحفظ
+      await compressAllCurtainImages(false);
 
-  document.getElementById("editButton").onclick = function () {
-    editOrder(selectedOrderIndex);
+      const client={
+        name:val('name'), phone:val('phone'), address:val('address'), date:val('date'), notes:val('notes'),
+        curtains:curtains, total:txt('sumTotal'), discount:val('discount'), afterDiscount:txt('sumAfterDiscount'),
+        savedAt: new Date().toISOString()
+      };
+
+      const orders=getOrders(); orders.push(client);
+      try{
+        setOrders(orders);
+      }catch(err){
+        // في حال كوتا، نضغط أكثر ونعيد المحاولة
+        console.warn('Quota error, trying stronger compression...', err);
+        await compressAllCurtainImages(true);
+        orders[orders.length-1].curtains = curtains;
+        setOrders(orders);
+      }
+
+      alert('تم حفظ الطلب ✅');
+      viewOrder(orders.length-1);
+      saving=false; if(btn){ btn.disabled=false; btn.textContent='💾 حفظ'; }
+    }catch(e){
+      saving=false; const btn=document.getElementById('btnSave'); if(btn){ btn.disabled=false; btn.textContent='💾 حفظ'; }
+      alert('تعذر الحفظ: ربما حجم الصور كبير جدًا. امسح بعض الطلبات القديمة أو التقط صورًا أصغر.\nالتفاصيل: '+e.message);
+    }
+  }
+  function getOrders(){ return JSON.parse(localStorage.getItem("curtainOrders")||"[]"); }
+  function setOrders(data){ localStorage.setItem("curtainOrders", JSON.stringify(data)); }
+  function showOrders(){
+    const orders=getOrders(); let html='';
+    if(!orders.length) html='<p>لا توجد طلبات محفوظة.</p>';
+    else orders.forEach((o,i)=>{
+      html+='<div class="curtain-summary"><div class="row"><div><b>'+escapeHtml(o.name||'')+'</b></div><div>'+escapeHtml(o.date||'')+'</div><div>الإجمالي: '+escapeHtml(o.total||'0')+' درهم</div></div>'+
+            '<div class="btns" style="justify-content:flex-start;margin-top:6px">'+
+            '<button type="button" class="btn" onclick="viewOrder('+i+')">👁️ عرض</button>'+
+            '<button type="button" class="btn" onclick="editOrder('+i+')">✏️ تعديل</button>'+
+            '<button type="button" class="btn del" onclick="deleteOrder('+i+')">🗑️ حذف</button>'+
+            '</div></div>';
+    });
+    document.getElementById("ordersList").innerHTML=html; goto('page-orders'); setStep(null);
+  }
+  function deleteOrder(i){ const orders=getOrders(); if(confirm('حذف هذا الطلب؟')){ orders.splice(i,1); setOrders(orders); showOrders(); } }
+  function viewOrder(i){
+    const o=getOrders()[i]; selectedOrderIndex=i;
+    let html='<div class="row"><div><b>الاسم:</b> '+escapeHtml(o.name||'')+'</div><div><b>الهاتف:</b> '+escapeHtml(o.phone||'')+'</div><div><b>التاريخ:</b> '+escapeHtml(o.date||'')+'</div></div><div><b>العنوان:</b> '+escapeHtml(o.address||'')+'</div><div><b>ملاحظات:</b> '+escapeHtml(o.notes||'')+'</div><div class="hr"></div>';
+    (o.curtains||[]).forEach((c,idx)=>{
+      html+='<div class="curtain-summary"><h3>ستارة '+(idx+1)+' — '+escapeHtml(c.location||'')+'</h3>'+
+            '<div class="row"><div><b>العرض:</b> '+c.width+' سم</div><div><b>الارتفاع:</b> '+c.height+' سم</div><div><b>القماش:</b> '+escapeHtml(c.fabric||'—')+'</div></div>'+
+            '<div class="row"><div><b>كود الشيفون:</b> '+escapeHtml(c.codeChiffon||'—')+'</div><div><b>كود البلاك/مخمل:</b> '+escapeHtml(c.codeBlackout||'—')+'</div></div>'+
+            '<div><b>السعر:</b> '+(c.price||0)+' + VAT '+(c.vat||0)+' = '+(c.total||0)+' درهم</div>'+
+            (c.windowPhoto?'<img src="'+c.windowPhoto+'" class="preview-img">':'')+
+            (c.chiffonPhoto?'<img src="'+c.chiffonPhoto+'" class="preview-img">':'')+
+            (c.blackoutPhoto?'<img src="'+c.blackoutPhoto+'" class="preview-img">':'')+
+            '</div>';
+    });
+    html+='<div class="hr"></div><div class="row"><div><b>الإجمالي:</b> '+escapeHtml(o.total||'0')+' درهم</div><div><b>الخصم:</b> '+escapeHtml(o.discount||'0')+' درهم</div><div><b>بعد الخصم:</b> '+escapeHtml(o.afterDiscount||o.total||'0')+' درهم</div></div>';
+    document.getElementById("viewOrderContent").innerHTML=html;
+    document.getElementById("editButton").onclick=()=>editOrder(i);
+    document.getElementById("deleteButton").onclick=()=>{ deleteOrder(i); goto('page-home'); };
+    goto('page-view-order'); setStep(null);
+  }
+
+  // ====== تعديل الطلب ======
+  function editOrder(i){
+    selectedOrderIndex=i; editOrderObject = JSON.parse(JSON.stringify(getOrders()[i])); // deep copy
+    renderEditOrder(); goto('page-edit-order'); setStep('measure');
+  }
+  function renderEditOrder(){
+    const o=editOrderObject; const wrap=document.getElementById('editOrderList');
+    let html='<div class="curtain-summary"><h3>بيانات العميل</h3>'+
+             '<label>الاسم</label><input id="e-name" value="'+escapeAttr(o.name||'')+'">'+
+             '<label>الهاتف</label><input id="e-phone" value="'+escapeAttr(o.phone||'')+'">'+
+             '<label>العنوان</label><textarea id="e-address">'+escapeHtml(o.address||'')+'</textarea>'+
+             '<label>التاريخ</label><input id="e-date" type="date" value="'+escapeAttr(o.date||'')+'">'+
+             '<label>ملاحظات</label><textarea id="e-notes">'+escapeHtml(o.notes||'')+'</textarea>'+
+             '</div><h3>ستائر الطلب</h3>';
+    (o.curtains||[]).forEach((c,idx)=>{ html+= curtainEditor(c, idx); });
+    wrap.innerHTML=html; bindEditInputs();
+  }
+  function curtainEditor(c, idx){
+    const opts=fabricOptions.map(opt=>'<option '+(opt.label===c.fabric?'selected':'')+' value="'+opt.label+'|'+opt.price+'">'+opt.label+'</option>').join('');
+    return '<div class="curtain-summary" data-idx="'+idx+'">'+
+           '<div class="row">'+
+           '<div><label>الموقع</label><input id="e-loc-'+idx+'" value="'+escapeAttr(c.location||'')+'"></div>'+
+           '<div><label>العرض (سم)</label><input id="e-w-'+idx+'" type="number" value="'+(c.width||0)+'"></div>'+
+           '<div><label>الارتفاع (سم)</label><input id="e-h-'+idx+'" type="number" value="'+(c.height||0)+'"></div>'+
+           '</div>'+
+           '<div class="row">'+
+           '<div><label>القماش</label><select id="e-fabric-'+idx+'">'+opts+'</select></div>'+
+           '<div><label>كود الشيفون</label><input id="e-chcode-'+idx+'" value="'+escapeAttr(c.codeChiffon||'')+'"></div>'+
+           '<div><label>كود البلاك/مخمل</label><input id="e-bocode-'+idx+'" value="'+escapeAttr(c.codeBlackout||'')+'"></div>'+
+           '</div>'+
+           '<div class="row">'+
+           '<div><label>صورة النافذة</label><input id="e-winphoto-'+idx+'" type="file" accept="image/*"></div>'+
+           '<div><label>صورة الشيفون</label><input id="e-chphoto-'+idx+'" type="file" accept="image/*"></div>'+
+           '<div><label>صورة البلاك/مخمل</label><input id="e-bophoto-'+idx+'" type="file" accept="image/*"></div>'+
+           '</div>'+
+           '<div class="row">'+
+           (c.windowPhoto?'<img src="'+c.windowPhoto+'" class="preview-img">':'')+
+           (c.chiffonPhoto?'<img src="'+c.chiffonPhoto+'" class="preview-img">':'')+
+           (c.blackoutPhoto?'<img src="'+c.blackoutPhoto+'" class="preview-img">':'')+
+           '</div>'+
+           '<div class="btns" style="justify-content:flex-end"><button type="button" class="btn del" onclick="removeCurtainInEdit('+idx+')">حذف هذه الستارة</button></div>'+
+           '</div>';
+  }
+  function bindEditInputs(){
+    const o=editOrderObject;
+    ['name','phone','address','date','notes'].forEach(k=>{ const el=document.getElementById('e-'+k); if(el){ el.oninput=()=>{ o[k]=el.value; }; }});
+    (o.curtains||[]).forEach((c,idx)=>{
+      const loc=gid('e-loc-'+idx), w=gid('e-w-'+idx), h=gid('e-h-'+idx), fa=gid('e-fabric-'+idx), ch=gid('e-chcode-'+idx), bo=gid('e-bocode-'+idx);
+      [loc,w,h,fa,ch,bo].forEach(el=>{ if(!el) return; el.oninput=()=>applyCurtainCalc(idx); el.onchange=()=>applyCurtainCalc(idx); });
+      const fwin=gid('e-winphoto-'+idx), fch=gid('e-chphoto-'+idx), fbo=gid('e-bophoto-'+idx);
+      if(fwin) fwin.onchange = async e=>{ const f=e.target.files&&e.target.files[0]; if(f){ c.windowPhoto=await fileToResizedDataURL(f); renderEditOrder(); } };
+      if(fch)  fch.onchange  = async e=>{ const f=e.target.files&&e.target.files[0]; if(f){ c.chiffonPhoto=await fileToResizedDataURL(f); renderEditOrder(); } };
+      if(fbo)  fbo.onchange  = async e=>{ const f=e.target.files&&e.target.files[0]; if(f){ c.blackoutPhoto=await fileToResizedDataURL(f); renderEditOrder(); } };
+    });
+  }
+  function applyCurtainCalc(idx){
+    const c=editOrderObject.curtains[idx];
+    c.location = val('e-loc-'+idx);
+    c.width = parseFloat(val('e-w-'+idx))||0;
+    c.height= parseFloat(val('e-h-'+idx))||0;
+    c.codeChiffon = val('e-chcode-'+idx);
+    c.codeBlackout= val('e-bocode-'+idx);
+    const [label,unitStr]=(val('e-fabric-'+idx)||'|0').split('|'); c.fabric=label;
+    const unit=parseFloat(unitStr)||0; const area=(c.width/100)*(c.height/100); const price=area*unit; const vat=price*0.05; const total=price+vat;
+    c.price=price.toFixed(2); c.vat=vat.toFixed(2); c.total=total.toFixed(2);
+  }
+  function addCurtainInEdit(){ editOrderObject.curtains.push({location:'',width:0,height:0,windowPhoto:null,fabric:fabricOptions[0].label,price:'0',vat:'0',total:'0',codeChiffon:'',codeBlackout:'',chiffonPhoto:null,blackoutPhoto:null}); renderEditOrder(); }
+  function removeCurtainInEdit(idx){ if(confirm('حذف هذه الستارة؟')){ editOrderObject.curtains.splice(idx,1); renderEditOrder(); } }
+  function saveEditedOrder(){
+    const orders=getOrders();
+    // recompute totals
+    let totalPrice=0,totalVAT=0; (editOrderObject.curtains||[]).forEach(c=>{ totalPrice+=(+c.price||0); totalVAT+=(+c.vat||0); });
+    editOrderObject.total=(totalPrice+totalVAT).toFixed(2);
+    if(!editOrderObject.afterDiscount) editOrderObject.afterDiscount=editOrderObject.total;
+    orders[selectedOrderIndex]=editOrderObject; setOrders(orders);
+    alert('تم حفظ التعديلات ✅'); viewOrder(selectedOrderIndex);
+  }
+  function cancelEdit(){ viewOrder(selectedOrderIndex); }
+
+  // ====== PDF مُحسّن (مسافات أكبر لمنع تداخل) ======
+  function getFabricOnly(txt){ if(!txt) return ''; if(txt.includes('Velvet')) return 'Velvet with Chiffon'; if(txt.includes('Blackout')) return 'Blackout with Chiffon'; if(txt.includes('Chiffon')) return 'Chiffon'; return txt; }
+  window.generatePDF = async function () {
+    try{
+      if(!window.jspdf || !window.jspdf.jsPDF){ alert('مكتبة PDF لم تُحمّل. تأكد من الاتصال ثم حاول.'); return; }
+      const doc = new window.jspdf.jsPDF("p","mm","a4");
+      const W=210, M=14, CONTENT=W-2*M; let y = 16;
+      const LINE = 6;
+      const IMG_W=44, IMG_H=32, LABEL_GAP=4, ROW_GAP=16; // <-- مسافات أكبر هنا
+      const HEADER_GAP=8; // فراغ قبل عناوين الأقسام
+
+      function ensurePage(extra=0){ if(y+extra>290){ doc.addPage(); y=16; } }
+      function writeBlock(text){ const lines=doc.splitTextToSize(text, CONTENT); lines.forEach(ln=>{ ensurePage(LINE); doc.text(ln, M, y); y+=LINE; }); }
+
+      // Logo
+      const logo = new Image(); logo.src = "https://i.postimg.cc/L4QwkTxg/LOGO23333.png"; await new Promise(res=>logo.onload=res);
+      const ratio = logo.width / logo.height, h=18, w=ratio*h, x=(W-w)/2;
+      doc.addImage(logo,"PNG",x,y,w,h); y += h + 4;
+
+      // Client
+      doc.setFontSize(11);
+      writeBlock("Client Name: " + (val('name')||""));
+      writeBlock("Phone: " + (val('phone')||""));
+      writeBlock("Address: " + (val('address')||""));
+      writeBlock("Visit Date: " + (val('date')||""));
+      const notes=val('notes'); if(notes){ writeBlock("Notes: " + notes); }
+
+      // Title
+      ensurePage(HEADER_GAP+8); doc.setFontSize(14); doc.text("Order Summary", W/2, y+HEADER_GAP/2, {align:"center"}); y+=HEADER_GAP+6;
+
+      // Table
+      const head=[["Location","Width","Height","Fabric","Chiffon Code","Blackout Code","Price (AED)"]];
+      const rows=[];
+      let totalPrice=0,totalVAT=0;
+      curtains.forEach(c=>{
+        totalPrice+=(+c.price||0); totalVAT+=(+c.vat||0);
+        rows.push([c.location||"", String(c.width||""), String(c.height||""), getFabricOnly(c.fabric||""), c.codeChiffon||"", c.codeBlackout||"", (c.total||"0")+" AED"]);
+      });
+      doc.autoTable({head:head, body:rows, startY:y, styles:{fontSize:9, cellPadding:1.5}, headStyles:{fillColor:[181,142,0]}, margin:{left:M, right:M}});
+      y = doc.lastAutoTable.finalY + HEADER_GAP;
+
+      // Images grid (مع فراغ أكبر بين الصفوف والترويسات)
+      for(let i=0;i<curtains.length;i++){
+        const c=curtains[i];
+        ensurePage(IMG_H + LABEL_GAP + ROW_GAP + 8);
+        doc.setFontSize(11); doc.text("Curtain "+(i+1)+" Images", M, y); y += 6;
+        async function add(src, x, label){
+          if(!src) return;
+          const img=new Image(); img.src=src; await new Promise(r=>img.onload=r);
+          ensurePage(IMG_H + LABEL_GAP + ROW_GAP);
+          doc.addImage(img,'JPEG', x, y, IMG_W, IMG_H);
+          doc.setFontSize(9); doc.text(label, x, y + IMG_H + LABEL_GAP);
+        }
+        await add(c.windowPhoto, M, "Window");
+        await add(c.chiffonPhoto, M+IMG_W+4, "Chiffon");
+        await add(c.blackoutPhoto, M+(IMG_W+4)*2, "Blackout");
+        y += IMG_H + LABEL_GAP + ROW_GAP; // <-- فراغ إضافي كبير بعد صف الصور
+      }
+
+      // Totals (مع مسافة قبلها)
+      y += HEADER_GAP;
+      ensurePage(4*LINE + 8);
+      doc.setFontSize(11);
+      writeBlock("Total without VAT: " + totalPrice.toFixed(2) + " AED");
+      writeBlock("VAT (5%): " + totalVAT.toFixed(2) + " AED");
+      writeBlock("Final Total: " + (totalPrice+totalVAT).toFixed(2) + " AED");
+      const disc=parseFloat(val('discount')||'0')||0;
+      if(disc>0){
+        writeBlock("Discount: -" + disc.toFixed(2) + " AED");
+        writeBlock("Total After Discount: " + (totalPrice+totalVAT-disc).toFixed(2) + " AED");
+      }
+
+      // Terms
+      y += 4;
+      ensurePage(6*LINE + 8);
+      doc.setFontSize(10); writeBlock("Payment Terms:");
+      ["(I) - 75% of the contract value shall be payable as advance payment at the time of signing the contract.",
+       "(II) - 25% at Finishing 50% of work.",
+       "(III) - The payment shall be released as per the mutually agreed terms & conditions.",
+       "(IV) - Any additional works will be charged."
+      ].forEach(t=>writeBlock(t));
+
+      const safe=(val('name')||'Client').replace(/[^a-zA-Z0-9؀-ۿ ]+/g,'_').substring(0,24).trim();
+      doc.save(safe+"_Curtain_Order.pdf");
+    }catch(e){ alert('PDF Error: '+e.message); }
   };
-  document.getElementById("deleteButton").onclick = function () {
-    deleteOrder(selectedOrderIndex);
-    next('page-view-order','page-home');
-  };
 
-  next('page-orders','page-view-order');
-}
+  // ====== الطباعة وواتساب ======
+  function printOrder(){ const c=document.getElementById("viewOrderContent").innerHTML; const w=window.open('','','width=900,height=700'); w.document.write('<html><head><title>طباعة الطلب</title><style>body{font-family:system-ui,Arial;direction:rtl;padding:20px}.curtain-summary{border:1px solid #ddd;border-radius:10px;margin:10px 0;padding:10px}img{max-width:220px;max-height:150px;display:inline-block;margin:6px;border:1px solid #eee;border-radius:8px}</style></head><body onload="window.print(); window.close();">'+c+'</body></html>'); w.document.close(); }
+  function sendToWhatsApp(){
+    const name=val('name'), phone=val('phone'), address=val('address'), date=val('date'), notes=val('notes');
+    let msg='طلب ستائر\n'+'الاسم: '+name+'\nالهاتف: '+phone+'\nالعنوان: '+address+'\nتاريخ الزيارة: '+date+'\n';
+    curtains.forEach((c,i)=>{ msg+='\nستارة '+(i+1)+' ('+c.location+')\nالعرض: '+c.width+' سم\nالارتفاع: '+c.height+' سم\nنوع القماش: '+(c.fabric||'—')+'\nكود الشيفون: '+(c.codeChiffon||'—')+'\nكود البلاك/مخمل: '+(c.codeBlackout||'—')+'\nالسعر: '+(c.price||0)+' + '+(c.vat||0)+' VAT = '+(c.total||0)+' درهم\n'; });
+    const total=txt('sumTotal'), discount=val('discount'), finalAfterDiscount=txt('sumAfterDiscount');
+    msg+='\nالإجمالي: '+total+' درهم'; if(discount){ msg+='\nالخصم: '+discount+' درهم\nبعد الخصم: '+finalAfterDiscount+' درهم'; } if(notes) msg+='\nملاحظات: '+notes;
+    window.open('https://wa.me/971504133032?text='+encodeURIComponent(msg), '_blank');
+  }
+
+  // ====== أدوات ======
+  function val(id){ const el=document.getElementById(id); return el?el.value:""; }
+  function txt(id){ const el=document.getElementById(id); return el?el.innerText:""; }
+  function gid(id){ return document.getElementById(id); }
+  function escapeHtml(str){ return (str||'').replace(/[&<>"]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
+  function escapeAttr(str){ return escapeHtml(str).replace(/"/g,'&quot;'); }
 </script>
-<div class="container hidden" id="page-view-order">
-<h2>📄 عرض الطلب</h2>
-<div id="viewOrderContent"></div>
-<div class="btns">
-<button id="editButton">✏️ تعديل</button>
-<button id="deleteButton">🗑️ حذف</button>
-<button onclick="printOrder()">🖨️ طباعة</button>
-<button onclick="next('page-view-order','page-home')">🏠 الرئيسية</button>
-</div>
-</div>
 </body>
 </html>
