@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>إدارة السيلز والقياس والتركيب — نسخة بروفيشنال (Firebase)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.13.0/cdn/themes/light.css" />
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.13.0/cdn/shoelace.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"/>
+  <style>
+    :root { --brand: #0B69FF; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Naskh Arabic UI", "Noto Kufi Arabic", Arial, sans-serif; background:#f7f8fb; }
+    header { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(8px); background: rgba(255,255,255,.85); border-bottom: 1px solid #eee; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .brand { display:flex; align-items:center; gap:10px; }
+    .brand-badge { width:40px; height:40px; border-radius:12px; display:grid; place-items:center; color:#fff; background: var(--brand); font-weight:700; }
+    sl-card::part(base){ border-radius:16px; }
+    sl-badge[variant="success"]::part(base){ font-weight:600; }
+    .grid { display:grid; gap:16px; }
+    @media (min-width: 960px){ .grid-3 { grid-template-columns: 1.3fr 1fr 1fr; } }
+    .muted { color:#6b7280; font-size:12px; }
+    .pill { padding:4px 10px; border:1px solid #e5e7eb; border-radius:999px; font-size:12px; }
+    .row { display:flex; gap:8px; align-items:center; }
+    .hidden { display:none !important; }
+    [dir="rtl"] sl-input::part(base), sl-textarea::part(base), sl-select::part(combobox){ text-align:right; }
+    .section-title{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .section-title h3{ margin:0; font-size:16px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <div class="brand">
+          <div class="brand-badge">VA</div>
+          <div>
+            <div style="font-weight:700;">نظام إدارة الزيارات والقياس والتركيب</div>
+            <div class="muted">نسخة بروفيشنال — Firebase + Shoelace UI</div>
+          </div>
+        </div>
+        <div class="row">
+          <sl-button size="small" id="openSettings" pill><i class="bi bi-gear"></i>&nbsp;إعدادات Firebase</sl-button>
+          <sl-button size="small" id="btnLogout" pill class="hidden" variant="default">تسجيل الخروج</sl-button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container grid grid-3" style="margin-top:16px;">
+    <sl-card id="authCard">
+      <div slot="header"><b>دخول المستخدم</b></div>
+      <div class="grid">
+        <sl-input id="email" label="البريد الإلكتروني" placeholder="name@company.com"></sl-input>
+        <sl-input id="password" type="password" label="كلمة المرور"></sl-input>
+        <div class="row">
+          <sl-button id="login" variant="primary">تسجيل الدخول</sl-button>
+          <sl-button id="signup" variant="default">إنشاء حساب</sl-button>
+        </div>
+        <div class="muted">بعد التسجيل، أكمل ملفك الشخصي واختر دورك.</div>
+      </div>
+    </sl-card>
+
+    <sl-card id="profileCard" class="hidden">
+      <div slot="header"><b>ملف المستخدم</b></div>
+      <div class="grid">
+        <sl-input id="pfName" label="الاسم"></sl-input>
+        <sl-input id="pfPhone" label="رقم الهاتف" placeholder="05XXXXXXXX"></sl-input>
+        <sl-select id="pfRole" label="الدور">
+          <sl-option value="sales">سيلز</sl-option>
+          <sl-option value="measure">قياس</sl-option>
+          <sl-option value="install">تركيب</sl-option>
+        </sl-select>
+        <sl-button id="saveProfile" variant="primary">حفظ الملف</sl-button>
+      </div>
+    </sl-card>
+
+    <sl-card id="meCard" class="hidden">
+      <div slot="header"><b>لوحة المستخدم</b></div>
+      <div class="grid">
+        <div class="row"><span class="pill" id="meRole">—</span><span class="pill" id="meName">—</span><span class="pill" id="mePhone">—</span></div>
+        <sl-button variant="default" id="switchToMeasure"><i class="bi bi-rulers"></i>&nbsp;مساحة فريق القياس</sl-button>
+        <sl-button variant="default" id="switchToMeetings"><i class="bi bi-people"></i>&nbsp;الاجتماعات</sl-button>
+        <sl-button variant="default" id="switchToOrders"><i class="bi bi-receipt"></i>&nbsp;الطلبات</sl-button>
+        <sl-button variant="default" id="switchToInstall"><i class="bi bi-tools"></i>&nbsp;التركيب</sl-button>
+      </div>
+    </sl-card>
+
+    <sl-card id="qaCard" class="hidden">
+      <div slot="header"><b>إجراءات سريعة</b></div>
+      <div class="grid">
+        <sl-button id="newMeeting" variant="primary" outline><i class="bi bi-calendar-plus"></i>&nbsp;إنشاء اجتماع</sl-button>
+        <sl-button id="newMeasure" variant="primary" outline><i class="bi bi-rulers"></i>&nbsp;بدء نموذج قياس</sl-button>
+      </div>
+    </sl-card>
+  </div>
+
+  <div class="container" style="margin-top:16px;">
+    <sl-card id="panelMeetings" class="hidden">
+      <div class="section-title">
+        <h3>قائمة الاجتماعات</h3>
+        <sl-button size="small" id="addMeetingBtn" variant="primary" pill>اجتماع جديد</sl-button>
+      </div>
+      <div id="meetingsList" class="grid"></div>
+    </sl-card>
+
+    <sl-card id="panelMeasure" class="hidden">
+      <div class="section-title">
+        <h3>مساحة فريق القياس</h3>
+        <sl-input id="mFilter" placeholder="ابحث بالاسم / الهاتف / العنوان..." clearable></sl-input>
+      </div>
+      <div id="measureQueue" class="grid"></div>
+    </sl-card>
+
+    <sl-card id="panelOrders" class="hidden">
+      <div class="section-title">
+        <h3>إدارة الطلبات</h3>
+      </div>
+      <div id="ordersList" class="grid"></div>
+    </sl-card>
+
+    <sl-card id="panelInstall" class="hidden">
+      <div class="section-title">
+        <h3>التركيب والإنهاء</h3>
+      </div>
+      <div id="installList" class="grid"></div>
+    </sl-card>
+  </div>
+
+  <sl-dialog id="dlgSettings" label="إعدادات Firebase" style="--width:680px">
+    <div class="grid">
+      <sl-input id="fb_apiKey" label="apiKey"></sl-input>
+      <sl-input id="fb_authDomain" label="authDomain"></sl-input>
+      <sl-input id="fb_projectId" label="projectId"></sl-input>
+      <sl-input id="fb_storageBucket" label="storageBucket"></sl-input>
+      <sl-input id="fb_messagingSenderId" label="messagingSenderId"></sl-input>
+      <sl-input id="fb_appId" label="appId"></sl-input>
+    </div>
+    <sl-button slot="footer" variant="primary" id="saveSettings">حفظ</sl-button>
+  </sl-dialog>
+
+  <sl-dialog id="dlgMeeting" label="اجتماع جديد" style="--width:700px">
+    <div class="grid">
+      <sl-input id="mt_name" label="اسم العميل"></sl-input>
+      <sl-input id="mt_phone" label="رقم العميل"></sl-input>
+      <sl-input id="mt_request" label="المطلوب"></sl-input>
+      <sl-input id="mt_link" label="رابط الموقع (خرائط)"></sl-input>
+      <sl-input id="mt_when" type="datetime-local" label="موعد الاجتماع"></sl-input>
+    </div>
+    <div slot="footer" class="row">
+      <sl-button id="saveMeeting" variant="primary">حفظ</sl-button>
+      <sl-button onclick="document.getElementById('dlgMeeting').hide()">إلغاء</sl-button>
+    </div>
+  </sl-dialog>
+
+  <sl-alert id="toast" duration="2000" closable class="hidden">
+    <sl-icon slot="icon" name="check2-circle"></sl-icon>
+    <strong id="toastMsg">تم</strong>
+  </sl-alert>
+
+  <script type="module">
+    const LSKEY = 'fb_cfg_v1';
+    const cfg = {
+      get(){ try {return JSON.parse(localStorage.getItem(LSKEY)||'{}')} catch(e){return{}} },
+      set(o){ localStorage.setItem(LSKEY, JSON.stringify(o)); }
+    };
+
+    const $ = (s)=>document.querySelector(s);
+    const $$ = (s)=>Array.from(document.querySelectorAll(s));
+    const show = (el)=>el.classList.remove('hidden');
+    const hide = (el)=>el.classList.add('hidden');
+    const toast = (msg)=>{ $('#toastMsg').textContent = msg; $('#toast').toast(); };
+
+    let app, auth, db, storage;
+    async function boot(){
+      const conf = cfg.get();
+      if(!conf.apiKey){ show($('#authCard')); return; }
+      const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const { getFirestore, collection, doc, addDoc, getDoc, setDoc, updateDoc, onSnapshot, serverTimestamp, query, orderBy } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const { getStorage, ref, uploadBytes, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js');
+
+      app = initializeApp(conf);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      storage = getStorage(app);
+
+      $('#login').onclick = async()=>{
+        try { await signInWithEmailAndPassword(auth, $('#email').value.trim(), $('#password').value.trim()); }
+        catch(e){ toast(e.message); }
+      };
+      $('#signup').onclick = async()=>{
+        try{ await createUserWithEmailAndPassword(auth, $('#email').value.trim(), $('#password').value.trim()); toast('تم إنشاء الحساب. سجّل الدخول'); }
+        catch(e){ toast(e.message); }
+      };
+      $('#btnLogout').onclick = ()=> signOut(auth);
+
+      onAuthStateChanged(auth, async(user)=>{
+        if(!user){
+          show($('#authCard'));
+          hide($('#profileCard')); hide($('#meCard')); hide($('#qaCard'));
+          hide($('#panelMeetings')); hide($('#panelMeasure')); hide($('#panelOrders')); hide($('#panelInstall'));
+          $('#btnLogout').classList.add('hidden');
+          return;
+        }
+        $('#btnLogout').classList.remove('hidden');
+        hide($('#authCard'));
+        const pRef = doc(db,'profiles',user.uid);
+        const pSnap = await getDoc(pRef);
+        if(!pSnap.exists()){
+          show($('#profileCard'));
+          $('#saveProfile').onclick = async()=>{
+            const payload = { name: $('#pfName').value.trim(), phone: $('#pfPhone').value.trim(), role: $('#pfRole').value, createdAt: serverTimestamp() };
+            await setDoc(pRef, payload);
+            toast('تم حفظ الملف'); loadProfile();
+          };
+        } else { loadProfile(); }
+
+        async function loadProfile(){
+          const prof = (await getDoc(pRef)).data();
+          hide($('#profileCard')); show($('#meCard')); show($('#qaCard'));
+          $('#meRole').textContent = 'الدور: ' + (prof.role==='sales'?'سيلز':prof.role==='measure'?'قياس':'تركيب');
+          $('#meName').textContent = prof.name||user.email;
+          $('#mePhone').textContent = prof.phone||'—';
+
+          openPanel('measure');
+          bindMeetings();
+          bindMeasureQueue();
+          bindOrders();
+          bindInstall();
+        }
+      });
+    }
+
+    function openPanel(name){
+      const map = { meetings: '#panelMeetings', measure:'#panelMeasure', orders:'#panelOrders', install:'#panelInstall' };
+      Object.values(map).forEach(sel=> hide($(sel)));
+      show($(map[name]));
+    }
+    $('#switchToMeetings').onclick = ()=> openPanel('meetings');
+    $('#switchToMeasure').onclick = ()=> openPanel('measure');
+    $('#switchToOrders').onclick = ()=> openPanel('orders');
+    $('#switchToInstall').onclick = ()=> openPanel('install');
+
+    $('#openSettings').onclick = ()=>{
+      const conf = cfg.get();
+      $('#fb_apiKey').value = conf.apiKey||'';
+      $('#fb_authDomain').value = conf.authDomain||'';
+      $('#fb_projectId').value = conf.projectId||'';
+      $('#fb_storageBucket').value = conf.storageBucket||'';
+      $('#fb_messagingSenderId').value = conf.messagingSenderId||'';
+      $('#fb_appId').value = conf.appId||'';
+      $('#dlgSettings').show();
+    };
+    $('#saveSettings').onclick = ()=>{
+      cfg.set({
+        apiKey: $('#fb_apiKey').value.trim(),
+        authDomain: $('#fb_authDomain').value.trim(),
+        projectId: $('#fb_projectId').value.trim(),
+        storageBucket: $('#fb_storageBucket').value.trim(),
+        messagingSenderId: $('#fb_messagingSenderId').value.trim(),
+        appId: $('#fb_appId').value.trim(),
+      });
+      $('#dlgSettings').hide(); toast('تم حفظ الإعدادات'); location.reload();
+    };
+
+    $('#addMeetingBtn').onclick = ()=> $('#dlgMeeting').show();
+    $('#newMeeting').onclick = ()=> { openPanel('meetings'); $('#dlgMeeting').show(); };
+
+    async function bindMeetings(){
+      const { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const q = query(collection(db,'meetings'), orderBy('scheduledAt','asc'));
+      onSnapshot(q,(snap)=>{
+        const box = $('#meetingsList'); box.innerHTML='';
+        snap.forEach(docSnap=>{
+          const m = docSnap.data(); const id = docSnap.id;
+          const card = document.createElement('sl-card');
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div style="font-weight:600">${m.customerName} <span class="muted">(${m.customerPhone||''})</span></div>
+                <div class="muted">الموعد: ${m.scheduledAt?.toDate?.()?.toLocaleString?.()||'-'}</div>
+                <div class="muted">المطلوب: ${m.request||'-'}</div>
+                ${m.mapLink? `<a href="${m.mapLink}" target="_blank">رابط الموقع</a>`:''}
+              </div>
+              <div class="row">
+                <sl-button size="small" data-id="${id}" class="to-order" pill outline><i class="bi bi-receipt"></i>&nbsp;تحويل لطلب</sl-button>
+              </div>
+            </div>`;
+          box.appendChild(card);
+        });
+        box.querySelectorAll('.to-order').forEach(btn=> btn.onclick = ()=> createOrder(btn.getAttribute('data-id')));
+      });
+
+      $('#saveMeeting').onclick = async()=>{
+        try{
+          await addDoc(collection(db,'meetings'), {
+            customerName: $('#mt_name').value.trim(),
+            customerPhone: $('#mt_phone').value.trim(),
+            request: $('#mt_request').value.trim(),
+            mapLink: $('#mt_link').value.trim(),
+            scheduledAt: $('#mt_when').value ? new Date($('#mt_when').value) : null,
+            status:'scheduled',
+            createdAt: serverTimestamp()
+          });
+          $('#dlgMeeting').hide(); toast('تم حفظ الاجتماع');
+          ['mt_name','mt_phone','mt_request','mt_link','mt_when'].forEach(id=> $('#'+id).value='');
+        }catch(e){ toast(e.message); }
+      };
+    }
+
+    async function createOrder(meetingId){
+      const { addDoc, collection, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      try{
+        await addDoc(collection(db,'orders'), { meetingId, isConfirmed:false, quotationUrl:'', total:0, paid:0, status:'pending', installDate:'', installTime:'', createdAt: serverTimestamp() });
+        toast('تم إنشاء الطلب');
+      }catch(e){ toast(e.message); }
+    }
+
+    $('#newMeasure').onclick = ()=> { openPanel('measure'); };
+
+    async function bindMeasureQueue(){
+      const { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const { ref, uploadBytes, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js');
+      const q = query(collection(db,'meetings'), orderBy('scheduledAt','asc'));
+      onSnapshot(q,(snap)=>{
+        const box = $('#measureQueue'); box.innerHTML='';
+        snap.forEach(docSnap=>{
+          const m = docSnap.data(); const id = docSnap.id;
+          const card = document.createElement('sl-card');
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div style="font-weight:600">${m.customerName} <span class="muted">(${m.customerPhone||''})</span></div>
+                <div class="muted"> ${m.request||'-'} </div>
+                <div class="muted"> الموعد: ${m.scheduledAt?.toDate?.()?.toLocaleString?.()||'-'} </div>
+              </div>
+              <div class="row">
+                <sl-button size="small" data-id="${id}" class="open-measure" variant="primary" pill><i class="bi bi-rulers"></i>&nbsp;فتح نموذج القياس</sl-button>
+              </div>
+            </div>
+            <div style="margin-top:10px;">
+              <form class="measure-form hidden" id="form-${id}">
+                <div class="grid" style="grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:12px;">
+                  <sl-select class="inp" data-f="unitType" label="نوع الموقع">
+                    <sl-option value="apartment">شقة</sl-option>
+                    <sl-option value="villa">فيلا</sl-option>
+                    <sl-option value="office">مكتب</sl-option>
+                    <sl-option value="shop">محل</sl-option>
+                  </sl-select>
+                  <sl-input class="inp" data-f="rooms" type="number" label="عدد الغرف" value="1"></sl-input>
+                  <sl-input class="inp" data-f="windows" type="number" label="عدد النوافذ" value="1"></sl-input>
+                  <sl-input class="inp" data-f="width" type="number" step="0.01" label="عرض النافذة (م)"></sl-input>
+                  <sl-input class="inp" data-f="height" type="number" step="0.01" label="ارتفاع النافذة (م)"></sl-input>
+                  <sl-textarea class="inp" data-f="notes" label="ملاحظات" rows="2"></sl-textarea>
+                  <sl-input class="inp" data-f="fabric" label="نوع القماش (اختياري)"></sl-input>
+                  <sl-input class="inp" data-f="color" label="لون القماش (اختياري)"></sl-input>
+                </div>
+                <div class="row" style="margin-top:8px;">
+                  <label class="pill" style="cursor:pointer;">
+                    <input type="file" class="photo" data-id="${id}" accept="image/*" multiple style="display:none;">
+                    <i class="bi bi-images"></i>&nbsp;رفع صور القياس
+                  </label>
+                  <sl-button size="small" data-id="${id}" class="save-measure" variant="success" pill><i class="bi bi-check2"></i>&nbsp;حفظ القياس</sl-button>
+                </div>
+                <div class="row" id="gallery-${id}" style="flex-wrap: wrap; gap:8px; margin-top:6px;"></div>
+              </form>
+            </div>`;
+          box.appendChild(card);
+        });
+
+        box.querySelectorAll('.open-measure').forEach(btn=>{
+          btn.onclick = ()=>{ const f = $('#form-'+btn.getAttribute('data-id')); f.classList.toggle('hidden'); };
+        });
+
+        box.querySelectorAll('.photo').forEach(inp=>{
+          inp.onchange = async(e)=>{
+            const files = Array.from(inp.files||[]);
+            const gallery = $('#gallery-'+inp.dataset.id);
+            for(const file of files){
+              const path = `measurements/${inp.dataset.id}/${Date.now()}-${file.name}`;
+              await uploadBytes(ref(storage, path), file);
+              const url = await getDownloadURL(ref(storage, path));
+              const img = document.createElement('img'); img.src = url; img.style.width='72px'; img.style.height='72px'; img.style.objectFit='cover'; img.style.borderRadius='10px';
+              gallery.appendChild(img);
+            }
+            toast('تم رفع الصور');
+          };
+        });
+
+        box.querySelectorAll('.save-measure').forEach(btn=>{
+          btn.onclick = async()=>{
+            const id = btn.getAttribute('data-id');
+            const form = $('#form-'+id);
+            const data = {};
+            form.querySelectorAll('.inp').forEach(el=> data[el.dataset.f] = el.value);
+            try{
+              await addDoc(collection(db,'measurements'), { meetingId:id, ...data, createdAt: serverTimestamp() });
+              toast('تم حفظ بيانات القياس');
+            }catch(e){ toast(e.message); }
+          };
+        });
+      });
+
+      $('#mFilter').addEventListener('sl-input', (e)=>{
+        const v = e.target.value.toLowerCase();
+        $$('#measureQueue sl-card').forEach(card=>{
+          const txt = card.textContent.toLowerCase();
+          card.style.display = txt.includes(v) ? '' : 'none';
+        });
+      });
+    }
+
+    async function bindOrders(){
+      const { collection, onSnapshot, query, orderBy, updateDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const q = query(collection(db,'orders'), orderBy('createdAt','desc'));
+      onSnapshot(q,(snap)=>{
+        const box = $('#ordersList'); box.innerHTML='';
+        snap.forEach(docSnap=>{
+          const o = docSnap.data(); const id = docSnap.id;
+          const balance = Math.max(Number(o.total||0)-Number(o.paid||0),0);
+          const card = document.createElement('sl-card');
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div style="font-weight:600">طلب #${id.slice(0,8)} <sl-badge variant="${balance>0?'warning':'success'}">${balance>0?('متبقي: '+balance.toFixed(2)):'مسدد'}</sl-badge></div>
+                <div class="muted">${o.status||'pending'} ${o.installDate?('• تركيب: '+o.installDate+(o.installTime?(' '+o.installTime):'')) : ''}</div>
+                ${o.quotationUrl? `<a href="${o.quotationUrl}" target="_blank">رابط الكوتيشن</a>`:''}
+              </div>
+              <div class="row">
+                <sl-button size="small" class="walink" data-b="${balance}" data-id="${id}" pill outline>تذكير واتساب</sl-button>
+              </div>
+            </div>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-top:8px;">
+              <sl-switch class="bind" data-f="isConfirmed" ${o.isConfirmed?'checked':''}>تأكيد الطلب</sl-switch>
+              <sl-input class="bind" data-f="quotationUrl" value="${o.quotationUrl||''}" placeholder="https://..." label="رابط الكوتيشن"></sl-input>
+              <sl-input class="bind" data-f="total" type="number" step="0.01" value="${o.total||0}" label="الإجمالي (AED)"></sl-input>
+              <sl-input class="bind" data-f="paid" type="number" step="0.01" value="${o.paid||0}" label="المدفوع (AED)"></sl-input>
+              <sl-input class="bind" data-f="installDate" type="date" value="${o.installDate||''}" label="تاريخ التركيب"></sl-input>
+              <sl-input class="bind" data-f="installTime" type="time" value="${o.installTime||''}" label="وقت التركيب"></sl-input>
+              <sl-select class="bind" data-f="status" value="${o.status||'pending'}" label="الحالة">
+                <sl-option value="pending">قيد المعالجة</sl-option>
+                <sl-option value="scheduled">تم الجدولة</sl-option>
+                <sl-option value="installed">تم التركيب</sl-option>
+              </sl-select>
+            </div>`;
+          box.appendChild(card);
+          card.querySelector('.walink').onclick = ()=>{
+            const txt = encodeURIComponent(`تذكير بالحساب والتركيب
+المتبقي: ${balance.toFixed(2)}
+رابط الكوتيشن: ${o.quotationUrl||''}`);
+            window.open('https://wa.me/?text='+txt, '_blank');
+          };
+          card.querySelectorAll('.bind').forEach(el=>{
+            el.addEventListener('sl-change', async()=>{
+              const patch = {}; const f = el.dataset.f;
+              patch[f] = (el.tagName==='SL-SWITCH') ? el.checked : el.value;
+              try{ await updateDoc(doc(db,'orders',id), patch); toast('تم الحفظ'); }catch(e){ toast(e.message); }
+            });
+          });
+        });
+      });
+    }
+
+    async function bindInstall(){
+      const { collection, onSnapshot, query, orderBy, updateDoc, doc, addDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const { ref, uploadBytes, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js');
+      const q = query(collection(db,'orders'), orderBy('installDate','asc'));
+      onSnapshot(q,(snap)=>{
+        const box = $('#installList'); box.innerHTML='';
+        snap.forEach(docSnap=>{
+          const o = docSnap.data(); const id = docSnap.id;
+          const card = document.createElement('sl-card');
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div style="font-weight:600">طلب #${id.slice(0,8)}</div>
+                <div class="muted">تركيب: ${o.installDate||'-'} ${o.installTime||''}</div>
+              </div>
+              <div class="row">
+                <label class="pill" style="cursor:pointer;">
+                  <input type="file" accept="image/*" class="final-photo" data-id="${id}" style="display:none;" multiple>
+                  <i class="bi bi-images"></i>&nbsp;رفع صور التركيب
+                </label>
+                <sl-button size="small" class="finish" data-id="${id}" variant="primary" pill>إنهاء</sl-button>
+              </div>
+            </div>`;
+          box.appendChild(card);
+          card.querySelector('.final-photo').onchange = async(e)=>{
+            const files = Array.from(e.target.files||[]);
+            for(const f of files){
+              const path = `orders/${id}/${Date.now()}-${f.name}`;
+              await uploadBytes(ref(storage,path), f);
+              const url = await getDownloadURL(ref(storage,path));
+              await addDoc(collection(db,'install_photos'), { orderId:id, url, createdAt: (await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')).serverTimestamp() });
+            }
+            toast('تم رفع الصور');
+          };
+          card.querySelector('.finish').onclick = async()=>{
+            try{ await updateDoc(doc(db,'orders',id), { status:'installed' }); toast('تم إنهاء الطلب'); }catch(e){ toast(e.message); }
+          };
+        });
+      });
+    }
+
+    $('#openSettings').click();
+    boot();
+  </script>
+</body>
+</html>
