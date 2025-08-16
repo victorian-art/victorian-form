@@ -152,7 +152,7 @@
     </div>
   </sl-dialog>
 
-  <sl-alert id="toast" duration="2000" closable class="hidden">
+  <sl-alert id="toast"\1\2>
     <sl-icon slot="icon" name="check2-circle"></sl-icon>
     <strong id="toastMsg">تم</strong>
   </sl-alert>
@@ -186,11 +186,11 @@
 
       $('#login').onclick = async()=>{
         try { await signInWithEmailAndPassword(auth, $('#email').value.trim(), $('#password').value.trim()); }
-        catch(e){ toast(e.message); }
+        catch(e){ toast((e && (e.code || e.message)) || 'Auth error'); }
       };
       $('#signup').onclick = async()=>{
         try{ await createUserWithEmailAndPassword(auth, $('#email').value.trim(), $('#password').value.trim()); toast('تم إنشاء الحساب. سجّل الدخول'); }
-        catch(e){ toast(e.message); }
+        catch(e){ toast((e && (e.code || e.message)) || 'Auth error'); }
       };
       $('#btnLogout').onclick = ()=> signOut(auth);
 
@@ -304,7 +304,7 @@
           });
           $('#dlgMeeting').hide(); toast('تم حفظ الاجتماع');
           ['mt_name','mt_phone','mt_request','mt_link','mt_when'].forEach(id=> $('#'+id).value='');
-        }catch(e){ toast(e.message); }
+        }catch(e){ toast((e && (e.code || e.message)) || 'Auth error'); }
       };
     }
 
@@ -313,7 +313,7 @@
       try{
         await addDoc(collection(db,'orders'), { meetingId, isConfirmed:false, quotationUrl:'', total:0, paid:0, status:'pending', installDate:'', installTime:'', createdAt: serverTimestamp() });
         toast('تم إنشاء الطلب');
-      }catch(e){ toast(e.message); }
+      }catch(e){ toast((e && (e.code || e.message)) || 'Auth error'); }
     }
 
     $('#newMeasure').onclick = ()=> { openPanel('measure'); };
@@ -396,7 +396,7 @@
             try{
               await addDoc(collection(db,'measurements'), { meetingId:id, ...data, createdAt: serverTimestamp() });
               toast('تم حفظ بيانات القياس');
-            }catch(e){ toast(e.message); }
+            }catch(e){ toast((e && (e.code || e.message)) || 'Auth error'); }
           };
         });
       });
@@ -454,7 +454,7 @@
             el.addEventListener('sl-change', async()=>{
               const patch = {}; const f = el.dataset.f;
               patch[f] = (el.tagName==='SL-SWITCH') ? el.checked : el.value;
-              try{ await updateDoc(doc(db,'orders',id), patch); toast('تم الحفظ'); }catch(e){ toast(e.message); }
+              try{ await updateDoc(doc(db,'orders',id), patch); toast('تم الحفظ'); }catch(e){ toast((e && (e.code || e.message)) || 'Auth error'); }
             });
           });
         });
@@ -496,7 +496,7 @@
             toast('تم رفع الصور');
           };
           card.querySelector('.finish').onclick = async()=>{
-            try{ await updateDoc(doc(db,'orders',id), { status:'installed' }); toast('تم إنهاء الطلب'); }catch(e){ toast(e.message); }
+            try{ await updateDoc(doc(db,'orders',id), { status:'installed' }); toast('تم إنهاء الطلب'); }catch(e){ toast((e && (e.code || e.message)) || 'Auth error'); }
           };
         });
       });
