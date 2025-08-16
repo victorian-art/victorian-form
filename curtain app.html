@@ -26,6 +26,25 @@
     .section-title{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
     .section-title h3{ margin:0; font-size:16px; }
   </style>
+
+<!-- AUTO-INJECT FIREBASE CONFIG FOR CURTAIN SALES -->
+<script>
+  (function(){
+    try {
+      var cfg = {
+        apiKey: "AIzaSyAziq7S7bCak_mtKgcLAbsepq3a1yn3NuE",
+        authDomain: "curtain-sales.firebaseapp.com",
+        projectId: "curtain-sales",
+        storageBucket: "curtain-sales.firebasestorage.app",
+        messagingSenderId: "11032657718",
+        appId: "1:11032657718:web:5e8a8a7448172bd82a7d97"
+      };
+      localStorage.setItem('fb_cfg_v1', JSON.stringify(cfg));
+      console.log("Firebase config injected");
+    } catch(e) { console.warn("Config inject error", e); }
+  })();
+</script>
+
 </head>
 <body>
   <header>
