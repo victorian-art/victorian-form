@@ -25,7 +25,10 @@
     [dir="rtl"] sl-input::part(base), sl-textarea::part(base), sl-select::part(combobox){ text-align:right; }
     .section-title{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
     .section-title h3{ margin:0; font-size:16px; }
-  </style>
+  
+  /* Force LTR for Firebase settings fields */
+  #dlgSettings sl-input::part(input){ direction:ltr; text-align:left; }
+</style>
 
 <!-- AUTO-INJECT FIREBASE CONFIG FOR CURTAIN SALES -->
 <script>
@@ -154,6 +157,7 @@
       <sl-input id="fb_messagingSenderId" label="messagingSenderId"></sl-input>
       <sl-input id="fb_appId" label="appId"></sl-input>
     </div>
+    <sl-button slot="footer" variant="default" id="resetSettings">مسح الإعدادات</sl-button>
     <sl-button slot="footer" variant="primary" id="saveSettings">حفظ</sl-button>
   </sl-dialog>
 
