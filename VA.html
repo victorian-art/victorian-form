@@ -560,39 +560,7 @@ function showSummary(){
 
 function summaryLines(){
   let lines=[];
-  lines.push(`العميل: ${$('#wz_name').value}
-
-/* ==== PATCH: Auto-delete meeting after first measurement save ==== */
-(function(){
-  try{
-    const btn = document.querySelector('#wz_add_measure');
-    if(btn){
-      btn.addEventListener('click', async function _autoDeleteMeetingOnce(){
-        try{
-          if(window.meetingContext && meetingContext.id){
-            const id = meetingContext.id;
-            await window.FB.deleteDoc(window.FB.doc(db, 'meetings', id));
-            // Optimistic UI: remove meeting card if visible
-            try{
-              const mbtn = document.querySelector(`[data-id="${id}"]`);
-              const card = mbtn ? mbtn.closest('sl-card') : null;
-              if(card) card.remove();
-            }catch(_){}
-            try{ toast('تم حذف الاجتماع تلقائيًا بعد حفظ القياس'); }catch(_){}
-            meetingContext.id = null; // prevent later double-delete
-          }
-        }catch(e){
-          try{ console.warn('auto-delete meeting failed', e && (e.message||e.code||e)); }catch(_){}
-        }
-      }, { once:true });
-    }
-  }catch(e){
-    try{ console.warn('auto-delete patch init error', e && (e.message||e.code||e)); }catch(_){}
-  }
-})();
-/* ==== END PATCH ==== */
-
-`);
+  lines.push(`العميل: ${$('#wz_name').value}`);
   lines.push(`الهاتف: ${$('#wz_phone').value}`);
   lines.push(`العنوان: ${$('#wz_address').value}`);
   lines.push(`التاريخ: ${$('#wz_date').value}`);
@@ -788,98 +756,6 @@ function printCompletedSummary(sinceDate){
   document.body.appendChild(hiddenScope);
 }
 
-
-/* ==== PATCH: Quotation PDF with embedded photos (window & fabrics) ==== */
-async function makeQuotationPDF_withPhotos(order){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p','pt','a4');
-
-  // Header
-  doc.setFont('helvetica','bold'); doc.setFontSize(16);
-  doc.text('Victorian Art Interior Decoration L.L.C — Curtains Quotation', 40, 40);
-  doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  doc.text(`Client: ${order.name||''}    Phone: ${order.phone||''}`, 40, 60);
-  doc.text(`Address: ${order.address||'-'}`, 40, 74);
-  doc.text(`Date: ${order.date||''}`, 40, 88);
-
-  // Table
-  const rows = (order.curtains||[]).map((c,i)=>[
-    String(i+1),
-    c.location||'—',
-    `${c.width||0}×${c.height||0} cm`,
-    c.fabric||'—',
-    (c.total||0).toFixed(2)
-  ]);
-
-  if (doc.autoTable) {
-    doc.autoTable({
-      head: [['#','Location','Size','Fabric','Total (AED)']],
-      body: rows,
-      startY: 110,
-      styles: { font: 'helvetica', fontSize: 10 },
-      headStyles: { fillColor: [240,240,240] }
-    });
-  }
-  let y = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? (doc.lastAutoTable.finalY + 12) : 130;
-
-  // Totals
-  const fmt = n => (Number(n||0)).toFixed(2);
-  doc.text(`Subtotal: ${fmt(order.sumPrice) } AED`, 40, y); y+=14;
-  doc.text(`VAT (5%): ${fmt(order.sumVAT)} AED`, 40, y); y+=14;
-  doc.text(`Discount: ${fmt(order.discount)} AED`, 40, y); y+=14;
-  doc.setFont('helvetica','bold');
-  doc.text(`Grand Total: ${fmt(order.afterDiscount)} AED`, 40, y); y+=18;
-  doc.setFont('helvetica','normal');
-
-  // Helper: URL -> dataURL
-  async function toDataURL(u){
-    try{
-      if(!u) return null;
-      if(String(u).startsWith('data:')) return u;
-      const res = await fetch(u);
-      const blob = await res.blob();
-      const b64 = await new Promise((resolve, reject)=>{
-        const fr = new FileReader();
-        fr.onload = ()=>resolve(fr.result);
-        fr.onerror = reject;
-        fr.readAsDataURL(blob);
-      });
-      return b64;
-    }catch(e){
-      try{ console.warn('photo embed failed', e && (e.message||e.code||e)); }catch(_){}
-      return null;
-    }
-  }
-
-  // Photos block
-  const maxW = 120, maxH = 90, gap = 10, pageBottom = 780;
-  for(let i=0;i<(order.curtains||[]).length;i++){
-    const c = order.curtains[i]||{};
-    const imgs = [c.windowPhoto, c.chiffonPhoto, c.blackoutPhoto].filter(Boolean);
-    if(!imgs.length) continue;
-    if(y > pageBottom){ doc.addPage(); y = 40; }
-    doc.setFont('helvetica','bold');
-    doc.text(`Curtain ${i+1} — Photos`, 40, y); y += 8;
-    doc.setFont('helvetica','normal');
-    let x = 40;
-    for(const u of imgs){
-      const data = await toDataURL(u);
-      if(!data) continue;
-      if(x + maxW > 550){ // wrap to next row
-        y += maxH + gap;
-        x = 40;
-        if(y > pageBottom){ doc.addPage(); y = 40; }
-      }
-      try{ doc.addImage(data, 'JPEG', x, y, maxW, maxH); }catch(_){}
-      x += maxW + gap;
-    }
-    y += maxH + 14;
-  }
-
-  return doc;
-}
-/* ==== END PATCH ==== */
-
 // reselect-file-on-click: allow re-choosing the same file by clearing input value on click
 ;['#wz_windowPhoto','#wz_photoChiffon','#wz_photoBlackout'].forEach(sel=>{
   const el = document.querySelector(sel);
@@ -920,7 +796,7 @@ async function saveOrder({uploadPdf=false}){
     // PDF upload + download
     if(uploadPdf){
       try{
-        const pdf = await makeQuotationPDF_withPhotos({...order,curtains});
+        const pdf = makeQuotationPDF({...order,curtains});
         const fileName=`Quotation_${order.name||orderId}.pdf`;
         pdf.save(fileName); // تنزيل فوري
         const blob=pdf.output('blob');
@@ -1569,7 +1445,7 @@ $('#wz_btnPDF').onclick=()=>{
   const order={ name:$('#wz_name').value, phone:$('#wz_phone').value, address:$('#wz_address').value, date:$('#wz_date').value, curtains,
     sumPrice:parseFloat($('#wz_sumPrice').textContent)||0, sumVAT:parseFloat($('#wz_sumVAT').textContent)||0, sumTotal:parseFloat($('#wz_sumTotal').textContent)||0,
     discount:parseFloat($('#wz_discount').value)||0, afterDiscount:parseFloat($('#wz_sumAfterDiscount').textContent)||0, notes:$('#wz_notes').value };
-  const pdf = await makeQuotationPDF_withPhotos(order); pdf.save(`Quotation_${order.name||'client'}.pdf`); // تنزيل فوري "من هنا"
+  const pdf=makeQuotationPDF(order); pdf.save(`Quotation_${order.name||'client'}.pdf`); // تنزيل فوري "من هنا"
   toast('تم تنزيل الكوتيشن PDF');
 };
 $('#wz_btnSave').onclick=()=>saveOrder({uploadPdf:true}); // يحذف الاجتماع تلقائياً + يرفع PDF + تنزيل فوري
